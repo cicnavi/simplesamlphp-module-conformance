@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="1"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="true"
+    cacheDirectory="./build/psalm/cache"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+>
+    <projectFiles>
+        <directory name="src" />
+        <directory name="config-templates" />
+        <directory name="public" />
+
+        <ignoreFiles>
+            <directory name="vendor" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <issueHandlers>
+        <!-- Ignore the fact that $config variable is not used in particular config files. -->
+        <UnusedVariable>
+            <errorLevel type="suppress">
+                <directory name="config-templates" />
+                <directory name="tests/config-templates" />
+            </errorLevel>
+        </UnusedVariable>
+
+        <!-- Ignore errors related to unused classes, methods... -->
+        <UnusedClass errorLevel="suppress" />
+        <PossiblyUnusedMethod errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+    </issueHandlers>
+</psalm>

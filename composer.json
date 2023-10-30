@@ -1,0 +1,52 @@
+{
+    "name": "cicnavi/simplesamlphp-module-conformance",
+    "description": "The SimpleSAMLphp Conformance module",
+    "type": "simplesamlphp-module",
+    "license": "LGPL-2.1-or-later",
+    "authors": [
+        {
+            "name": "Marko Ivančić",
+            "email": "marko.ivancic@srce.hr"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "simplesamlphp/composer-module-installer": true
+        },
+        "cache-dir": "build/composer"
+    },
+    "autoload": {
+        "psr-4": {
+            "SimpleSAML\\Module\\conformance\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SimpleSAML\\Test\\Module\\conformance\\": "tests/src/"
+        }
+    },
+    "require": {
+        "php": "^8.0",
+        "composer-runtime-api": "^2.0",
+        "psr/log": "^1|^2|^3",
+        "simplesamlphp/composer-module-installer": "^1",
+        "cicnavi/simple-file-cache-php": "^2.0"
+    },
+    "require-dev": {
+        "vimeo/psalm": "^5",
+        "phpunit/phpunit": "^9",
+        "squizlabs/php_codesniffer": "^3",
+        "simplesamlphp/simplesamlphp": "2.0.*",
+        "simplesamlphp/simplesamlphp-test-framework": "^1",
+        "rector/rector": "^0.18.4"
+    },
+    "suggest": {
+    },
+    "scripts": {
+        "pre-commit": [
+            "vendor/bin/phpcs -p",
+            "vendor/bin/psalm",
+            "vendor/bin/phpunit"
+        ]
+    }
+}
