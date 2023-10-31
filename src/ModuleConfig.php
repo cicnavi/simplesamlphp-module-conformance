@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\accounting;
+namespace SimpleSAML\Module\conformance;
 
+use Exception;
 use SimpleSAML\Configuration;
 
 class ModuleConfig
@@ -14,6 +15,7 @@ class ModuleConfig
      * Default file name for module configuration. Can be overridden in constructor, for example, for testing purposes.
      */
     public const FILE_NAME = 'module_conformance.php';
+	const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
 
 	/**
      * Contains configuration from module configuration file.
@@ -69,7 +71,7 @@ class ModuleConfig
     }
 
     /**
-     * @throws InvalidConfigurationException
+     * @throws Exception
      */
     protected function validate(): void
     {
@@ -77,7 +79,12 @@ class ModuleConfig
 
         if (!empty($errors)) {
             $message = sprintf('Module configuration validation failed with errors: %s', implode(' ', $errors));
-            throw new InvalidConfigurationException($message);
+            throw new Exception($message);
         }
     }
+
+	public function getDummyPrivateKey(): string
+	{
+		return $this->getConfig()->getString(self::OPTION_DUMMY_PRIVATE_KEY);
+	}
 }

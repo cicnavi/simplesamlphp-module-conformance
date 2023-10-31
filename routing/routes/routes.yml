@@ -1,1 +1,5 @@
 
+conformance-test-setup:
+  path: /test/setup
+  controller: SimpleSAML\Module\conformance\Controllers\TestSetup::setup
+
