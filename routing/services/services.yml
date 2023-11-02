@@ -8,3 +8,9 @@ services:
   # Services
   SimpleSAML\Module\conformance\:
     resource: '../../src/*'
+    exclude: '../../src/{Controllers}'
+
+  # Controllers
+  SimpleSAML\Module\conformance\Controllers\:
+    resource: '../../src/Controllers/*'
+    tags: ['controller.service_arguments']

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
-$config = [
+use SimpleSAML\Module\conformance\ModuleConfig;
 
+$config = [
+	ModuleConfig::OPTION_DUMMY_PRIVATE_KEY => 'dummy.key',
 ];
