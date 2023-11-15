@@ -31,7 +31,6 @@ use SimpleSAML\Module\saml\Message;
 use SimpleSAML\Stats;
 use SimpleSAML\Utils\HTTP;
 use SimpleSAML\Utils\Random;
-use Symfony\Component\HttpFoundation\Response;
 
 class TestResponder extends SAML2 implements ResponderInterface
 {
@@ -68,6 +67,9 @@ class TestResponder extends SAML2 implements ResponderInterface
 
 	public function standardResponse(array $state): void
 	{
+//        die(var_dump($state));
+//        $state['IdPMetadata']['entityid'] .= 'invalid';
+//        $state['core:IdP'] .= 'invalid';
 		parent::sendResponse($state);
 	}
 
