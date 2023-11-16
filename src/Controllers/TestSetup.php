@@ -15,12 +15,11 @@ use SimpleSAML\Module\conformance\Helpers\StateHelper;
 use SimpleSAML\Module\conformance\ModuleConfig;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
 use SimpleSAML\XHTML\Template;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class TestSetup extends AbstractController
+class TestSetup
 {
 	public function __construct(
 		protected Configuration $sspConfig,
