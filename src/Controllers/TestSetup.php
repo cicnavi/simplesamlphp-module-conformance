@@ -9,6 +9,7 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\NoState;
 use SimpleSAML\HTTP\RunnableResponse;
+use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Cache;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
@@ -46,7 +47,7 @@ class TestSetup
 		if ($testId && $spEntityId) {
 			// TODO mivanci Validate $testId and $spEntityId
 			$this->cache->setTestId($testId, $spEntityId);
-			return new JsonResponse(['message' => 'ok']);
+			return new JsonResponse(['status' => 'ok']);
 		}
 
 		// Call from authproc filter.
