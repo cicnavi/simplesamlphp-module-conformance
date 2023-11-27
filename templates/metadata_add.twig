@@ -1,0 +1,41 @@
+{% set pagetitle = 'Add SP metadata'|trans %}
+{% extends "base.twig" %}
+
+{% block content %}
+
+    <h2>{{ pagetitle }}</h2>
+
+
+
+    {% if status is not null %}
+        <div class="code-box">
+            <div class="code-box-content">
+                <pre id="" class="">{{ status|escape|upper }}: {{ message|escape }}</pre>
+            </div>
+        </div>
+    {% endif -%}
+
+    <form method="post" class="pure-form" enctype="multipart/form-data" action="{{ moduleURL('conformance/metadata/persist') }}">
+        <h3> {{ 'SP XML metadata'|trans }}</h3>
+        <input type="hidden" name="fromUi" value="1">
+        <div class="pure-control-group">
+            <textarea name="xmlData" rows="20" class="text-area edge xmldata">{{ xmlData }}</textarea>
+        </div>
+        <br>
+        <div class="center">
+            <div class="pure-button-group two-elements" role="group">
+                <label class="pure-button">
+                    <span class="fa fa-folder-open"></span>{{ 'or select a file:'|trans }}
+                    <input type="file" name="xmlFile" class="hidden" id="file-input">
+                </label>
+                <label id="show-file" class="pure-button hollow show-files" >{{ 'No file selected.'|trans }}</label>
+            </div>
+            <br>
+            <button class="pure-button pure-button-red pure-input-1-3">{{ 'Parse'|trans }}</button>
+        </div>
+    </form>
+{% endblock content -%}
+
+{% block postload %}
+    <script src="{{ asset('js/metadata-converter.js', 'admin') }}"></script>
+{% endblock postload %}
