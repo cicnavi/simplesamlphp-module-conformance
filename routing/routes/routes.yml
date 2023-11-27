@@ -3,3 +3,14 @@ conformance-test-setup:
   path: /test/setup
   controller: SimpleSAML\Module\conformance\Controllers\TestSetup::setup
 
+conformance-metadata-add:
+  path: /metadata/add
+  controller: SimpleSAML\Module\conformance\Controllers\Metadata::add
+  methods:
+    - GET
+
+conformance-metadata-persist:
+  path: /metadata/persist
+  controller: SimpleSAML\Module\conformance\Controllers\Metadata::persist
+  methods:
+    - POST

@@ -36,6 +36,11 @@ cp modules/conformance/config-templates/module_conformance.php config/
 Next step is to configure available options in file config/module_conformance.php. Each option has an explanation,
 however, the description of the overall concept follows.
 
+### PDO Metadata Storage Handler
+
+This module relies on PDO as being set as a metadata storage handler in SimpleSAMLphp. Please go through the following
+documentation to set it up: https://simplesamlphp.org/docs/stable/simplesamlphp-metadata-pdostoragehandler
+
 ## Adding Authentication Processing Filter
 Last step to start tracking user data using the configured tracker classes / jobs store is to add an [authentication
 processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc.html) from the conformance module

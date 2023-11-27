@@ -3,6 +3,8 @@
 namespace SimpleSAML\Module\conformance\Auth\Process;
 
 use Cicnavi\SimpleFileCache\Exceptions\CacheException;
+use Exception;
+use Psr\SimpleCache\InvalidArgumentException;
 use SimpleSAML\Auth;
 use SimpleSAML\Module;
 use SimpleSAML\Module\conformance\Cache;
@@ -11,9 +13,6 @@ use SimpleSAML\Module\conformance\ModuleConfig;
 use SimpleSAML\Utils\HTTP;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
 
-/**
- * TODO mivanci move to SSP v2.1
- */
 class Conformance extends Auth\ProcessingFilter
 {
 	public const KEY_TEST_ID = 'testId';
@@ -32,7 +31,6 @@ class Conformance extends Auth\ProcessingFilter
 	 *
 	 * @param array $config Configuration information about this filter.
 	 * @param mixed $reserved For future use.
-	 * @throws CacheException
 	 */
     public function __construct(
 	    array             $config,
@@ -52,7 +50,8 @@ class Conformance extends Auth\ProcessingFilter
     /**
      * Apply filter.
      *
-     * @param array &$state  The current request
+     * @param array &$state The current request
+     * @throws Exception|InvalidArgumentException
      */
     public function process(array &$state): void
     {
@@ -71,13 +70,18 @@ class Conformance extends Auth\ProcessingFilter
 
 	    $responderCallable = $this->responderResolver->fromTestId($testId);
 	    if (is_null($responderCallable)) {
-		    throw new \Exception('No test responder available for test ID ' . $testId);
+		    throw new Exception('No test responder available for test ID ' . $testId);
 	    }
 	    // TODO mivanci Check if responder already exists (it should, otherwise, the authproc is not set in IdP).
 	    $state[Conformance::KEY_RESPONDER] = $responderCallable;
     }
 
-	protected function resolveTestId(string $spEntityId): ?string
+    /**
+     * @throws InvalidArgumentException
+     * @throws CacheException
+     * @throws \Cicnavi\SimpleFileCache\Exceptions\InvalidArgumentException
+     */
+    protected function resolveTestId(string $spEntityId): ?string
 	{
 		$testId = $this->cache->getTestId($spEntityId);
 
@@ -85,6 +89,6 @@ class Conformance extends Auth\ProcessingFilter
 			return null;
 		}
 
-		return (string)$testId;
+		return $testId;
 	}
 }

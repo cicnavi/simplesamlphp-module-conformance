@@ -2,10 +2,12 @@
 
 namespace SimpleSAML\Module\conformance\Helpers;
 
+use Exception;
+
 class StateHelper
 {
 	/**
-	 * @throws \Exception
+	 * @throws Exception
 	 */
 	public function resolveSpEntityId(array $state): string
 	{
@@ -13,7 +15,7 @@ class StateHelper
 
 		if (is_null($spEntityId)) {
 			// TODO mvianci Move to custom exception
-			throw new \Exception('No SP ID.');
+			throw new Exception('No SP ID.');
 		}
 		return (string)$spEntityId;
 	}

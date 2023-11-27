@@ -14,3 +14,9 @@ services:
   SimpleSAML\Module\conformance\Controllers\:
     resource: '../../src/Controllers/*'
     tags: ['controller.service_arguments']
+
+  # SimpleSAMLphp Services
+  SimpleSAML\Metadata\MetaDataStorageHandlerPdo:
+    arguments:
+      - { }
+  SimpleSAML\Utils\XML: ~
