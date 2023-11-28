@@ -49,26 +49,26 @@ class Metadata
     {
         $xmlData = $this->getXmlData($request);
 
-        $status = new GenericStatus();
+        $requestStatus = new GenericStatus();
 
         if (empty($xmlData)) {
-            $status->setStatusError()->setMessage('No XML data provided.');
-            return $this->prepareResponse($request, $status);
+            $requestStatus->setStatusError()->setMessage('No XML data provided.');
+            return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             $this->xmlUtils->checkSAMLMessage($xmlData, 'saml-meta');
         } catch (Exception $exception) {
-            $status->setStatusError()->setMessage('Invalid XML. ' . $exception->getMessage());
-            return $this->prepareResponse($request, $status);
+            $requestStatus->setStatusError()->setMessage('Invalid XML. ' . $exception->getMessage());
+            return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             // TODO mivanci Create injected bridge.
             $entities = SAMLParser::parseDescriptorsString($xmlData);
         } catch (Exception $exception) {
-            $status->setStatusError()->setMessage('Error parsing XML. ' . $exception->getMessage());
-            return $this->prepareResponse($request, $status);
+            $requestStatus->setStatusError()->setMessage('Error parsing XML. ' . $exception->getMessage());
+            return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         $spEntities = [];
@@ -89,23 +89,23 @@ class Metadata
         }
 
         if (empty($spEntities)) {
-            $status->setStatusOk()->setMessage('XML parsed, but no SP metadata found.');
+            $requestStatus->setStatusOk()->setMessage('XML parsed, but no SP metadata found.');
         } else {
-            $status->setStatusOk()->setMessage(sprintf('Imported metadata for %s SPs.', count($spEntities)));
+            $requestStatus->setStatusOk()->setMessage(sprintf('Imported metadata for %s SPs.', count($spEntities)));
         }
 
-        return $this->prepareResponse($request, $status);
+        return $this->prepareResponse($request, $requestStatus);
     }
 
-    protected function prepareResponse(Request $request, GenericStatus $status): Response
+    protected function prepareResponse(Request $request, GenericStatus $requestStatus, int $httpStatus = 200): Response
     {
         if ($request->request->has('fromUi')) {
             return new RedirectResponse(
-                Module::getModuleURL(ModuleConfig::MODULE_NAME . '/metadata/add', $status->toArray())
+                Module::getModuleURL(ModuleConfig::MODULE_NAME . '/metadata/add', $requestStatus->toArray())
             );
         }
 
-        return new JsonResponse($status->toArray(),400);
+        return new JsonResponse($requestStatus->toArray(),$httpStatus);
     }
 
     protected function getXmlData(Request $request): ?string
