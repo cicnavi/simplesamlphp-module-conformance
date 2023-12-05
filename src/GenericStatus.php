@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance;
 
 use Symfony\Component\HttpFoundation\Request;
@@ -9,10 +11,10 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class GenericStatus
 {
-    public const KEY_STATUS = 'status';
-    public const KEY_MESSAGE = 'message';
-    public const STATUS_ERROR = 'error';
-    public const STATUS_OK = 'ok';
+    final public const KEY_STATUS = 'status';
+    final public const KEY_MESSAGE = 'message';
+    final public const STATUS_ERROR = 'error';
+    final public const STATUS_OK = 'ok';
 
     public function __construct(
         protected ?string $status = null,

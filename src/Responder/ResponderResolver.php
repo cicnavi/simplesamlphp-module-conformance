@@ -1,24 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Responder;
 
 class ResponderResolver
 {
-	public function fromTestId(string $testId, ResponderInterface $responder = null): ?array
-	{
-		$responder = $responder ?? new TestResponder();
+    public function fromTestId(string $testId, ResponderInterface $responder = null): ?array
+    {
+        $responder ??= new TestResponder();
 
-		$method = match ($testId) {
-			'1', 'standardResponse' => 'standardResponse',
-			'2', 'noSignature' => 'noSignature',
-			'3', 'invalidSignature' => 'invalidSignature',
-			default => null,
-		};
+        $method = match ($testId) {
+            '1', 'standardResponse' => 'standardResponse',
+            '2', 'noSignature' => 'noSignature',
+            '3', 'invalidSignature' => 'invalidSignature',
+            default => null,
+        };
 
-		if ($method && method_exists($responder, $method)) {
-			return [$responder, $method];
-		}
+        if ($method && method_exists($responder, $method)) {
+            return [$responder, $method];
+        }
 
-		return null;
-	}
+        return null;
+    }
 }

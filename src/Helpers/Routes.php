@@ -13,7 +13,7 @@ use function sprintf;
 
 class Routes
 {
-    public const PATH_METADATA_ADD = 'metadata/add';
+    final public const PATH_METADATA_ADD = 'metadata/add';
 
     protected HTTP $sspHttpUtils;
     protected Arr $arr;

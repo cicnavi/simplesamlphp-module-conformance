@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Controllers;
 
-use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Metadata
 {
-    const SET_SAML20_SP_REMOTE = 'saml20-sp-remote';
+    final public const SET_SAML20_SP_REMOTE = 'saml20-sp-remote';
 
     public function __construct(
         protected Configuration $sspConfig,
@@ -36,7 +37,7 @@ class Metadata
     public function add(Request $request): Response
     {
         $status = GenericStatus::fromRequest($request);
-        $t = new Template($this->sspConfig, 'conformance:metadata_add.twig');
+        $t = new Template($this->sspConfig, 'conformance:metadata-add.twig');
         $t->data = [
             'xmlData' => null,
             ...$status->toArray(),
@@ -105,7 +106,7 @@ class Metadata
             );
         }
 
-        return new JsonResponse($requestStatus->toArray(),$httpStatus);
+        return new JsonResponse($requestStatus->toArray(), $httpStatus);
     }
 
     protected function getXmlData(Request $request): ?string

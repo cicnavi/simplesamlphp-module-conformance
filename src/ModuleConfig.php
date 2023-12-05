@@ -9,15 +9,15 @@ use SimpleSAML\Configuration;
 
 class ModuleConfig
 {
-    public const MODULE_NAME = 'conformance';
+    final public const MODULE_NAME = 'conformance';
 
     /**
      * Default file name for module configuration. Can be overridden in constructor, for example, for testing purposes.
      */
-    public const FILE_NAME = 'module_conformance.php';
-	const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
+    final public const FILE_NAME = 'module_conformance.php';
+    final public const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
 
-	/**
+    /**
      * Contains configuration from module configuration file.
      */
     protected Configuration $config;
@@ -83,8 +83,8 @@ class ModuleConfig
         }
     }
 
-	public function getDummyPrivateKey(): string
-	{
-		return $this->getConfig()->getString(self::OPTION_DUMMY_PRIVATE_KEY);
-	}
+    public function getDummyPrivateKey(): string
+    {
+        return $this->getConfig()->getString(self::OPTION_DUMMY_PRIVATE_KEY);
+    }
 }
