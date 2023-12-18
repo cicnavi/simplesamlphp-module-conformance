@@ -6,6 +6,7 @@ namespace SimpleSAML\Module\conformance;
 
 use Exception;
 use SimpleSAML\Configuration;
+use SimpleSAML\Module\conformance\Errors\InvalidConfigurationException;
 
 class ModuleConfig
 {
@@ -32,8 +33,6 @@ class ModuleConfig
         $fullConfigArray = array_merge(Configuration::getConfig($fileName)->toArray(), $overrides);
 
         $this->config = Configuration::loadFromArray($fullConfigArray);
-
-        $this->validate();
     }
 
     /**
@@ -48,6 +47,7 @@ class ModuleConfig
 
     /**
      * Get configuration option from module configuration file.
+     * @throws InvalidConfigurationException
      */
     public function get(string $option): mixed
     {
@@ -68,19 +68,6 @@ class ModuleConfig
     public function getModuleRootDirectory(): string
     {
         return dirname(__DIR__);
-    }
-
-    /**
-     * @throws Exception
-     */
-    protected function validate(): void
-    {
-        $errors = [];
-
-        if (!empty($errors)) {
-            $message = sprintf('Module configuration validation failed with errors: %s', implode(' ', $errors));
-            throw new Exception($message);
-        }
     }
 
     public function getDummyPrivateKey(): string

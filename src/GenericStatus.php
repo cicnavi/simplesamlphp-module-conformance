@@ -22,14 +22,6 @@ class GenericStatus
     ) {
     }
 
-    public static function fromRequest(Request $request): self
-    {
-        return new self(
-            $request->server->get(self::KEY_STATUS) ?? $request->query->get(self::KEY_STATUS),
-            $request->server->get(self::KEY_MESSAGE) ?? $request->query->get(self::KEY_MESSAGE)
-        );
-    }
-
     public function getStatus(): ?string
     {
         return $this->status;

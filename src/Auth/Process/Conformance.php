@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Auth\Process;
 
-use Cicnavi\SimpleFileCache\Exceptions\CacheException;
-use Exception;
 use Psr\SimpleCache\InvalidArgumentException;
-use SimpleSAML\Auth;
-use SimpleSAML\Module;
+use SimpleSAML\Auth\ProcessingFilter;
 use SimpleSAML\Module\conformance\Cache;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
 use SimpleSAML\Module\conformance\ModuleConfig;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
 use SimpleSAML\Module\conformance\SspBridge;
+use Throwable;
 
-class Conformance extends Auth\ProcessingFilter
+class Conformance extends ProcessingFilter
 {
     final public const KEY_TEST_ID = 'testId';
     final public const KEY_RESPONDER = 'Responder';
@@ -46,7 +45,7 @@ class Conformance extends Auth\ProcessingFilter
      * Apply filter.
      *
      * @param array &$state The current request
-     * @throws Exception|InvalidArgumentException
+     * @throws ConformanceException
      */
     public function process(array &$state): void
     {
@@ -64,24 +63,27 @@ class Conformance extends Auth\ProcessingFilter
                 $url,
                 [self::KEY_STATE_ID => $id, self::KEY_SP_ENTITY_ID => $spEntityId]
             );
+            return;
         }
 
         $responderCallable = $this->responderResolver->fromTestId($testId);
         if (is_null($responderCallable)) {
-            throw new Exception('No test responder available for test ID ' . $testId);
+            throw new ConformanceException('No test responder available for test ID ' . $testId);
         }
         // TODO mivanci Check if responder already exists (it should, otherwise, the authproc is not set in IdP).
         $state[Conformance::KEY_RESPONDER] = $responderCallable;
     }
 
     /**
-     * @throws InvalidArgumentException
-     * @throws CacheException
-     * @throws \Cicnavi\SimpleFileCache\Exceptions\InvalidArgumentException
+     * @throws ConformanceException
      */
     protected function resolveTestId(string $spEntityId): ?string
     {
-        $testId = $this->cache->getTestId($spEntityId);
+        try {
+            $testId = $this->cache->getTestId($spEntityId);
+        } catch (Throwable | InvalidArgumentException $exception) {
+            throw new ConformanceException('Error getting test ID from cache: ' . $exception->getMessage());
+        }
 
         if (is_null($testId)) {
             return null;

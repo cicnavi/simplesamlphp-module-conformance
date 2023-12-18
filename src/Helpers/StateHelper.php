@@ -10,14 +10,14 @@ use SimpleSAML\Module\conformance\Errors\ConformanceException;
 class StateHelper
 {
     /**
-     * @throws Exception
+     * @throws ConformanceException
      */
     public function resolveSpEntityId(array $state): string
     {
         $spEntityId = $state['Destination']['entityid'] ?? null;
 
         if (is_null($spEntityId)) {
-            throw new ConformanceException('No SP ID.');
+            throw new ConformanceException('No SP entity ID available in state array.');
         }
         return (string)$spEntityId;
     }

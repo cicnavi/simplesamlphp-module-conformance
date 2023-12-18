@@ -4,45 +4,75 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance;
 
-use Cicnavi\SimpleFileCache\Exceptions\CacheException;
 use Cicnavi\SimpleFileCache\SimpleFileCache;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
+use SimpleSAML\Module\conformance\Errors\CacheException;
+use Throwable;
 
 class Cache
 {
     protected CacheInterface $cache;
 
+    /**
+     * @throws CacheException
+     */
     public function __construct(CacheInterface $cache = null)
     {
-        $this->cache = $cache ?? new SimpleFileCache(ModuleConfig::MODULE_NAME . '-cache');
+        try {
+            $this->cache = $cache ?? new SimpleFileCache(ModuleConfig::MODULE_NAME . '-cache');
+        } catch (Throwable $exception) {
+            throw new CacheException('Error initializing cache instance: ' . $exception->getMessage());
+        }
     }
 
     /**
-     * // TODO mivanci Implement custom exception handling
-     * @throws InvalidArgumentException
-     * @throws \Cicnavi\SimpleFileCache\Exceptions\InvalidArgumentException
      * @throws CacheException
      */
     public function getTestId(string $spEntityId): ?string
     {
         $cacheKeyTestId = $this->getTestIdCacheKey($spEntityId);
-        $testId = $this->cache->get($cacheKeyTestId);
+        try {
+            $testId = $this->cache->get($cacheKeyTestId);
+        } catch (Throwable | InvalidArgumentException $exception) {
+            throw new CacheException(
+                'Error getting ' . $cacheKeyTestId . ' from cache: ' . $exception->getMessage()
+            );
+        }
 
         if (is_null($testId)) {
             return null;
         }
 
-        $this->cache->delete($cacheKeyTestId);
+        try {
+            $this->cache->delete($cacheKeyTestId);
+        } catch (Throwable | InvalidArgumentException $exception) {
+            throw new CacheException(
+                'Error deleting ' . $cacheKeyTestId . ' from cache: ' . $exception->getMessage()
+            );
+        }
 
         return (string)$testId;
     }
 
+    /**
+     * @throws CacheException
+     */
     public function setTestId(string $testId, string $spEntityId): void
     {
         $cacheKeyTestId = $this->getTestIdCacheKey($spEntityId);
-        $this->cache->set($cacheKeyTestId, $testId, 60);
+        try {
+            $this->cache->set($cacheKeyTestId, $testId, 60);
+        } catch (Throwable | InvalidArgumentException $exception) {
+            throw new CacheException(
+                sprintf(
+                    'Error setting test ID (%s). Error was: %s',
+                    var_export(compact('testId', 'spEntityId', 'cacheKeyTestId'), true),
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 
     protected function getTestIdCacheKey(string $spEntityId): string

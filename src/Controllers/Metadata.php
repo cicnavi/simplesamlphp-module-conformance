@@ -10,6 +10,7 @@ use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Metadata\SAMLParser;
 use SimpleSAML\Module;
+use SimpleSAML\Module\conformance\GenericStatusFactory;
 use SimpleSAML\Module\conformance\ModuleConfig;
 use SimpleSAML\Module\conformance\GenericStatus;
 use SimpleSAML\Utils\XML;
@@ -28,6 +29,7 @@ class Metadata
         protected ModuleConfig $moduleConfig,
         protected MetaDataStorageHandlerPdo $metaDataStorageHandlerPdo,
         protected XML $xmlUtils,
+        protected GenericStatusFactory $genericStatusFactory,
     ) {
     }
 
@@ -36,7 +38,7 @@ class Metadata
      */
     public function add(Request $request): Response
     {
-        $status = GenericStatus::fromRequest($request);
+        $status = $this->genericStatusFactory->fromRequest($request);
         $t = new Template($this->sspConfig, 'conformance:metadata-add.twig');
         $t->data = [
             'xmlData' => null,
