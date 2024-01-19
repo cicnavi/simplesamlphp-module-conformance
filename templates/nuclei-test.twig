@@ -1,0 +1,23 @@
+{% set pagetitle = 'Nuclei Test'|trans %}
+{% extends "base.twig" %}
+
+{% block content %}
+  <h1>{{ pagetitle }}</h1>
+
+  <pre id="output" style="max-height: max-content">
+    {{ output ?? 'No output' }}
+  </pre>
+
+{% endblock %}
+
+{% block foot %}
+<div style="display: none">
+  <input type="hidden" id="canRunTest" value="{{ canRunTest }}">
+</div>
+{% endblock %}
+
+{% block postload %}
+  {% if canRunTest %}
+    <script src="{{ asset('js/nuclei-test-run.js', 'conformance') }}"></script>
+  {% endif %}
+{% endblock %}

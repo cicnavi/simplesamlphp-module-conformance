@@ -1,0 +1,31 @@
+id: incubatorsamltest
+info:
+  name: Incubator SAML test
+  severity: low
+  tags: headless,extractor
+variables:
+  filename: '{{replace(BaseURL,"/","_")}}'
+  dir: "screenshots"
+  idpentityid: 'urn:x-simplesamlphp:geant:incubator:conformance-idp'
+  spentityid: 'urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp'
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: https://conformance-idp.maiv1.incubator.geant.org/module.php/conformance/test/setup?testId=noSignature&spEntityId={{url_encode(spentityid)}}
+      - action: waitload
+      - action: navigate
+        args: 
+          url: https://conformance-idp.maiv1.incubator.geant.org/saml2/idp/SSOService.php?spentityid={{url_encode(spentityid)}}
+      - action: waitload
+      - action: screenshot
+        args: 
+          fullpage: "true"
+          mkdir: "true"
+          to: "{{dir}}/{{filename}}"
+    matchers:
+      - part: resp
+        type: word
+        words:
+          - "Neither the assertion nor the response was signed"
+          - "Unhandled exception"
