@@ -21,6 +21,12 @@ conformance-nuclei-test-setup:
   methods:
     - GET
 
+conformance-nuclei-test-fetch-acss:
+  path: /nuclei/test/fetch-acss
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::fetchAcss
+  methods:
+    - GET
+
 conformance-nuclei-test-run:
   path: /nuclei/test/run
   controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::run

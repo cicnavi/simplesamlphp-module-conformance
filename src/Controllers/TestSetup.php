@@ -64,7 +64,6 @@ class TestSetup
 
         $spEntityId = $this->stateHelper->resolveSpEntityId($state);
         if ($testId) {
-            // TODO mivanci validate $testId
             $responderCallable = $this->responderResolver->fromTestId($testId);
             if (is_null($responderCallable)) {
                 throw new Exception('No test responder available for test ID ' . $testId);

@@ -1,23 +1,67 @@
 {% set pagetitle = 'Nuclei Test'|trans %}
 {% extends "base.twig" %}
 
+{% block preload %}
+  <link rel="stylesheet" href="{{ asset('css/src/default.css', 'conformance') }}">
+{% endblock %}
+
 {% block content %}
   <h1>{{ pagetitle }}</h1>
 
-  <pre id="output" style="max-height: max-content">
-    {{ output ?? 'No output' }}
-  </pre>
+  <div class="form-container">
+    <form method="post">
+      <div class="form-group">
+        <label for="test-type-id">Test type</label>
+        <select id="test-type-id" name="Test type">
+          <option value="standardResponse" selected>Standard response</option>
+          <option value="noSignature">No signature</option>
+          <option value="invalidSignature">Invalid signature</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="service-provider-entity-id">Service Provider (SP)</label>
+        <select id="service-provider-entity-id">
+          {% for entityId, serviceProvider in serviceProviders %}
+          <option value="{{ entityId }}">{{ entityId }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="assertion-consumer-service-url">Assertion Consumer Service (ACS, optional)</label>
+        <select id="assertion-consumer-service-url">
+          <option value="" selected></option>
+        </select>
+        <span class="help">
+          If you need to test specific ACS, select it from here. Otherwise, you can leave it empty to resolve it
+          automatically.
+        </span>
+      </div>
+
+{#      <div class="form-group">#}
+{#        <label for="text-input">Text Input:</label>#}
+{#        <input type="text" id="text-input" name="text-input" placeholder="Enter text">#}
+{#      </div>#}
+
+      <div class="form-group">
+        <button id="nuclei-run-test-btn" type="button">Run</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="cmd-output">
+    <pre id="cmd-output">{{ output ?? 'Waiting for test initialization...' }}</pre>
+  </div>
 
 {% endblock %}
 
 {% block foot %}
-<div style="display: none">
+<div>
   <input type="hidden" id="canRunTest" value="{{ canRunTest }}">
 </div>
 {% endblock %}
 
 {% block postload %}
-  {% if canRunTest %}
-    <script src="{{ asset('js/nuclei-test-run.js', 'conformance') }}"></script>
-  {% endif %}
+  <script src="{{ asset('js/src/nuclei-test-run.js', 'conformance') }}"></script>
 {% endblock %}

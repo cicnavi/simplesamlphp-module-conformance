@@ -3,26 +3,26 @@ info:
   name: Incubator SAML test
   severity: low
   tags: headless,extractor
+  author: T&I Incubator
 variables:
-  filename: '{{replace(BaseURL,"/","_")}}'
+  filename: '{{replace_regex(BaseURL,"(\\W+)","_")}}'
   dir: "screenshots"
   idpentityid: 'urn:x-simplesamlphp:geant:incubator:conformance-idp'
-  spentityid: 'urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp'
 headless:
   - steps:
       - action: navigate
         args:
-          url: https://conformance-idp.maiv1.incubator.geant.org/module.php/conformance/test/setup?testId=noSignature&spEntityId={{url_encode(spentityid)}}
+          url: https://conformance-idp.maiv1.incubator.geant.org/module.php/conformance/test/setup?testId={{TEST_ID}}&spEntityId={{url_encode(SP_ENTITY_ID)}}
       - action: waitload
       - action: navigate
         args: 
-          url: https://conformance-idp.maiv1.incubator.geant.org/saml2/idp/SSOService.php?spentityid={{url_encode(spentityid)}}
+          url: https://conformance-idp.maiv1.incubator.geant.org/saml2/idp/SSOService.php?spentityid={{url_encode(SP_ENTITY_ID)}}
       - action: waitload
       - action: screenshot
         args: 
           fullpage: "true"
           mkdir: "true"
-          to: "{{dir}}/{{filename}}"
+          to: "{{dir}}/{{randstr}}-{{filename}}"
     matchers:
       - part: resp
         type: word

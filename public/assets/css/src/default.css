@@ -1,0 +1,91 @@
+
+div.cmd-output {
+    background-color: #f0f0f0; /* Set a background color for the container */
+    border-radius: 5px;
+}
+
+/* Command line output box */
+div.cmd-output pre {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    padding: 10px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+/* Text colors */
+.black-text { color: black; }
+.red-text { color: red; }
+.lightcoral-text { color: lightcoral; }
+.green-text { color: green; }
+.yellow-text { color: yellow; }
+.blue-text { color: blue; }
+.magenta-text { color: magenta; }
+.cyan-text { color: cyan; }
+.lightcyan-text { color: lightcyan; }
+.white-text { color: white; }
+
+/* Background colors */
+.black-bg { background-color: black; }
+.red-bg { background-color: red; }
+.green-bg { background-color: green; }
+.yellow-bg { background-color: yellow; }
+.blue-bg { background-color: blue; }
+.darkblue-bg { background-color: darkblue; }
+.magenta-bg { background-color: magenta; }
+.cyan-bg { background-color: cyan; }
+.white-bg { background-color: white; }
+
+/* Text styles */
+.bold-text { font-weight: bold; }
+.underline-text { text-decoration: underline; }
+.blink-text { text-decoration: blink; }
+.inverted-text { background-color: black; color: white; }
+
+
+/* Style the form container */
+.form-container {
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+/* Style form groups (label + input/select) */
+.form-group {
+    margin-bottom: 15px;
+}
+
+/* Style form group input help  */
+.form-group span.help {
+    font-size: 0.7em;
+}
+
+/* Style labels */
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Style text input and select input */
+input[type="text"],
+select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Style the submit button */
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Style the submit button on hover */
+button:hover {
+    background-color: #f1f5f1;
+}
