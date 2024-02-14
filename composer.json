@@ -32,7 +32,8 @@
         "composer-runtime-api": "^2.0",
         "psr/log": "^1|^2|^3",
         "simplesamlphp/composer-module-installer": "^1",
-        "cicnavi/simple-file-cache-php": "^2.0"
+        "cicnavi/simple-file-cache-php": "^2.0",
+        "symfony/mime": "^6.4"
     },
     "require-dev": {
         "vimeo/psalm": "^5",

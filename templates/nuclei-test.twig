@@ -11,20 +11,21 @@
   <div class="form-container">
     <form method="post">
       <div class="form-group">
+        <label for="serviceProviderEntityId">Service Provider (SP)</label>
+        <select id="serviceProviderEntityId">
+          {% for entityId, serviceProvider in serviceProviders %}
+            <option value="{{ entityId }}">{{ entityId }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# TODO mivanci generate from a list of available tests. #}
+      <div class="form-group">
         <label for="testTypeId">Test type</label>
         <select id="testTypeId" name="Test type">
           <option value="standardResponse" selected>Standard response</option>
           <option value="noSignature">No signature</option>
           <option value="invalidSignature">Invalid signature</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="serviceProviderEntityId">Service Provider (SP)</label>
-        <select id="serviceProviderEntityId">
-          {% for entityId, serviceProvider in serviceProviders %}
-          <option value="{{ entityId }}">{{ entityId }}</option>
-          {% endfor %}
         </select>
       </div>
 
@@ -48,6 +49,11 @@
         <label for="enableVerbose">
           <input type="checkbox" id="enableVerbose">
           Show verbose output?
+        </label>
+
+        <label for="enableOutputExport">
+          <input type="checkbox" id="enableOutputExport">
+          Export output to a file?
         </label>
 
         <label for="enableFindingsExport">

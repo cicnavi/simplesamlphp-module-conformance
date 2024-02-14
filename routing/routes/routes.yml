@@ -33,3 +33,15 @@ conformance-nuclei-test-run:
   methods:
     - POST
     - GET
+
+conformance-results-index:
+  path: /results
+  controller: SimpleSAML\Module\conformance\Controllers\TestResults::index
+  methods:
+    - GET
+
+conformance-results-download:
+  path: /results/download
+  controller: SimpleSAML\Module\conformance\Controllers\TestResults::download
+  methods:
+    - GET

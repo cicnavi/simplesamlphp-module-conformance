@@ -75,6 +75,7 @@
         const testTypeInputElement = document.getElementById('testTypeId');
         const enableDebugElement = document.getElementById('enableDebug');
         const enableVerboseElement = document.getElementById('enableVerbose');
+        const enableOutputExportElement = document.getElementById('enableOutputExport');
         const enableFindingsExportElement = document.getElementById('enableFindingsExport');
         const enableJsonExportElement = document.getElementById('enableJsonExport');
         const enableJsonLExportElement = document.getElementById('enableJsonLExport');
@@ -86,6 +87,7 @@
         formData.append('serviceProviderEntityId', serviceProviderEntityIdSelect.value);
         formData.append('enableDebug', enableDebugElement.checked ? '1' : '0');
         formData.append('enableVerbose', enableVerboseElement.checked ? '1' : '0');
+        formData.append('enableOutputExport', enableOutputExportElement.checked ? '1' : '0');
         formData.append('enableFindingsExport', enableFindingsExportElement.checked ? '1' : '0');
         formData.append('enableJsonExport', enableJsonExportElement.checked ? '1' : '0');
         formData.append('enableJsonLExport', enableJsonLExportElement.checked ? '1' : '0');

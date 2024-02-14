@@ -1,0 +1,46 @@
+{% set pagetitle = 'Test results'|trans %}
+{% extends "base.twig" %}
+
+{# TODO mivanci Create own base twig file and include defaults like menu, CSS...#}
+{% block preload %}
+  <link rel="stylesheet" href="{{ asset('css/src/default.css', 'conformance') }}">
+{% endblock %}
+
+{% block content %}
+  <h1>{{ pagetitle }}</h1>
+
+<div class="form-container">
+  <form id="resultsForm" method="get" action="results">
+    <div class="form-group">
+      <label for="serviceProviderEntityId">Service Provider (SP)</label>
+      <select id="serviceProviderEntityId" name="serviceProviderEntityId">
+        <option value=""></option>
+        {% for entityId, serviceProvider in serviceProviders %}
+          <option value="{{ entityId }}" {{ entityId == selectedServiceProviderEntityId ? 'selected' : '' }}>
+            {{ entityId }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="results-container">
+  {% if results and selectedServiceProviderEntityId %}
+    <ul>
+    {% for result in results %}
+      <li>
+        * <a href="results/download?serviceProviderEntityId={{ selectedServiceProviderEntityId|url_encode }}&result={{ result|url_encode }}">
+          {{ result }}
+        </a>
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block postload %}
+  <script src="{{ asset('js/src/test-results.js', 'conformance') }}"></script>
+{% endblock %}

@@ -26,7 +26,7 @@ class NucleiTest
 {
     protected const KEY_NUCLEI = 'nuclei';
 
-    protected const KEY_SET_SP_REMOTE = 'saml20-sp-remote';
+    protected const KEY_SET_SP_REMOTE = 'saml20-sp-remote';  // TODO mivanci Add to SspBridge class.
 
     protected const KEY_AssertionConsumerService = 'AssertionConsumerService';
     protected const KEY_Location = 'Location';
@@ -39,9 +39,14 @@ class NucleiTest
         protected ResponderResolver $responderResolver,
         protected Utils $utils,
         protected Filesystem $filesystem,
-        MetaDataStorageHandler $metaDataStorageHandler = null,
+        MetaDataStorageHandler $metaDataStorageHandler = null, // TODO mivanci Add to SspBridge.
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
+    }
+
+    public function serviceProvidersIndex(Request $request) : Response
+    {
+        $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
     }
 
     public function setup(Request $request): Response
@@ -92,8 +97,8 @@ class NucleiTest
             return new StreamedResponse(function() use ($acsUrl) {echo "Could not extract target from ACS: $acsUrl.";});
         }
 
+        // TODO mivanci Export this path for usage in TestResults.
         $nucleiDataDir = $this->sspConfig->getPathValue('datadir', sys_get_temp_dir()) . self::KEY_NUCLEI;
-        $nucleiScreenshotsDir = $nucleiDataDir . DIRECTORY_SEPARATOR . 'screenshots';
 
         $nucleiPublicDir = $this->moduleConfig->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
@@ -107,6 +112,7 @@ class NucleiTest
 
         $enableDebug = (bool) $request->get('enableDebug');
         $enableVerbose = (bool) $request->get('enableVerbose');
+        $enableOutputExport = (bool) $request->get('enableOutputExport');
         $enableFindingsExport = (bool) $request->get('enableFindingsExport');
         $enableJsonExport = (bool) $request->get('enableJsonExport');
         $enableJsonLExport = (bool) $request->get('enableJsonLExport');
@@ -125,6 +131,7 @@ class NucleiTest
             $filename,
             $enableDebug,
             $enableVerbose,
+            $enableOutputExport,
             $enableFindingsExport,
             $enableJsonExport,
             $enableJsonLExport,
@@ -146,7 +153,7 @@ class NucleiTest
             $command =
                 "mkdir -p $resultOutputDir; " .
                 "nuclei -target $target " .
-                "-env-vars -headless -matcher-status -follow-redirects -disable-update-check " .
+                "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
                 "-templates $nucleiTemplatesDir " .
                 "-var TEST_ID=$testId " .
                 "-var SP_ENTITY_ID=$spEntityId " .
@@ -161,10 +168,8 @@ class NucleiTest
                 ($enableMarkdownExport ? "-markdown-export $resultOutputDir/markdown " : '') .
                 ($enableDebug ? '-debug ' : '') .
                 ($enableVerbose ? '-verbose ' : '') .
-                "2>&1; " .
-                "nucleiExitStatus=\$?; " .
-                'echo "Command exit status: ${nucleiExitStatus}"; ' .
-                'exit $nucleiExitStatus'
+                "2>&1 " .
+                ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ");
             ;
 
             $descriptors = [
