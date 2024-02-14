@@ -17,6 +17,7 @@ class ModuleConfig
      */
     final public const FILE_NAME = 'module_conformance.php';
     final public const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
+    final public const OPTION_CONFORMANCE_IDP_BASE_URL = 'conformance-idp-base-url';
 
     /**
      * Contains configuration from module configuration file.
@@ -73,5 +74,10 @@ class ModuleConfig
     public function getDummyPrivateKey(): string
     {
         return $this->getConfig()->getString(self::OPTION_DUMMY_PRIVATE_KEY);
+    }
+
+    public function getConformanceIdpBaseUrl(): ?string
+    {
+        return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_BASE_URL, null);
     }
 }

@@ -32,3 +32,4 @@ conformance-nuclei-test-run:
   controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::run
   methods:
     - POST
+    - GET

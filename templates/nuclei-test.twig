@@ -11,8 +11,8 @@
   <div class="form-container">
     <form method="post">
       <div class="form-group">
-        <label for="test-type-id">Test type</label>
-        <select id="test-type-id" name="Test type">
+        <label for="testTypeId">Test type</label>
+        <select id="testTypeId" name="Test type">
           <option value="standardResponse" selected>Standard response</option>
           <option value="noSignature">No signature</option>
           <option value="invalidSignature">Invalid signature</option>
@@ -20,8 +20,8 @@
       </div>
 
       <div class="form-group">
-        <label for="service-provider-entity-id">Service Provider (SP)</label>
-        <select id="service-provider-entity-id">
+        <label for="serviceProviderEntityId">Service Provider (SP)</label>
+        <select id="serviceProviderEntityId">
           {% for entityId, serviceProvider in serviceProviders %}
           <option value="{{ entityId }}">{{ entityId }}</option>
           {% endfor %}
@@ -29,8 +29,8 @@
       </div>
 
       <div class="form-group">
-        <label for="assertion-consumer-service-url">Assertion Consumer Service (ACS, optional)</label>
-        <select id="assertion-consumer-service-url">
+        <label for="assertionConsumerServiceUrl">Assertion Consumer Service (ACS, optional)</label>
+        <select id="assertionConsumerServiceUrl">
           <option value="" selected></option>
         </select>
         <span class="help">
@@ -39,10 +39,43 @@
         </span>
       </div>
 
-{#      <div class="form-group">#}
-{#        <label for="text-input">Text Input:</label>#}
-{#        <input type="text" id="text-input" name="text-input" placeholder="Enter text">#}
-{#      </div>#}
+      <div class="form-group">
+        <label for="enableDebug">
+          <input type="checkbox" id="enableDebug">
+          Show all requests and responses?
+        </label>
+
+        <label for="enableVerbose">
+          <input type="checkbox" id="enableVerbose">
+          Show verbose output?
+        </label>
+
+        <label for="enableFindingsExport">
+          <input type="checkbox" id="enableFindingsExport">
+          Export findings to a file?
+        </label>
+
+        <label for="enableJsonExport">
+          <input type="checkbox" id="enableJsonExport">
+          Export results in JSON format?
+        </label>
+
+        <label for="enableJsonLExport">
+          <input type="checkbox" id="enableJsonLExport">
+          Export results in JSONL(ine) format?
+        </label>
+
+        <label for="enableSarifExport">
+          <input type="checkbox" id="enableSarifExport">
+          Export results in SARIF format?
+        </label>
+
+        <label for="enableMarkdownExport">
+          <input type="checkbox" id="enableMarkdownExport">
+          Export results in Markdown format?
+        </label>
+
+      </div>
 
       <div class="form-group">
         <button id="nuclei-run-test-btn" type="button">Run</button>
@@ -51,7 +84,7 @@
   </div>
 
   <div class="cmd-output">
-    <pre id="cmd-output">{{ output ?? 'Waiting for test initialization...' }}</pre>
+    <pre id="cmd-output">{{ output ?? 'Waiting for test initialization.' }}</pre>
   </div>
 
 {% endblock %}

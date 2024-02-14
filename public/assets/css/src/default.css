@@ -89,3 +89,11 @@ button {
 button:hover {
     background-color: #f1f5f1;
 }
+
+/* Style the button when disabled */
+button:disabled {
+    background-color: #aaa; /* Change background color */
+    color: #666; /* Change text color */
+    cursor: not-allowed; /* Change cursor to indicate not allowed */
+    opacity: 0.6; /* Optionally reduce opacity to visually indicate disabled state */
+}

@@ -3,7 +3,7 @@
     window.conformance = {};
     window.conformance.nuclei = {};
 
-    const serviceProviderEntityIdSelect = document.getElementById('service-provider-entity-id');
+    const serviceProviderEntityIdSelect = document.getElementById('serviceProviderEntityId');
 
     /**
      * Populate available ACSs for specific SP Entity ID.
@@ -11,7 +11,7 @@
     window.conformance.nuclei.fetchAcss = function () {
 
         // Clear all existing options
-        const assertionConsumerServiceIdSelect = document.getElementById('assertion-consumer-service-url');
+        const assertionConsumerServiceIdSelect = document.getElementById('assertionConsumerServiceUrl');
         assertionConsumerServiceIdSelect.disabled = true;
         assertionConsumerServiceIdSelect.innerHTML = '';
 
@@ -72,18 +72,25 @@
         const outputElement = document.getElementById('cmd-output');
         outputElement.innerHTML = 'Waiting...';
 
-        const testTypeInputElement = document.getElementById('test-type-id');
-        const serviceProviderInputElement = document.getElementById('service-provider-entity-id');
-
-
-        const data = {
-            testTypeId: testTypeInputElement.value,
-            serviceProviderEntityId: serviceProviderInputElement.value,
-        };
+        const testTypeInputElement = document.getElementById('testTypeId');
+        const enableDebugElement = document.getElementById('enableDebug');
+        const enableVerboseElement = document.getElementById('enableVerbose');
+        const enableFindingsExportElement = document.getElementById('enableFindingsExport');
+        const enableJsonExportElement = document.getElementById('enableJsonExport');
+        const enableJsonLExportElement = document.getElementById('enableJsonLExport');
+        const enableSarifExportElement = document.getElementById('enableSarifExport');
+        const enableMarkdownExportElement = document.getElementById('enableMarkdownExport');
 
         const formData = new URLSearchParams();
-        formData.append('test-type-id', testTypeInputElement.value);
-        formData.append('service-provider-entity-id', serviceProviderInputElement.value);
+        formData.append('testTypeId', testTypeInputElement.value);
+        formData.append('serviceProviderEntityId', serviceProviderEntityIdSelect.value);
+        formData.append('enableDebug', enableDebugElement.checked ? '1' : '0');
+        formData.append('enableVerbose', enableVerboseElement.checked ? '1' : '0');
+        formData.append('enableFindingsExport', enableFindingsExportElement.checked ? '1' : '0');
+        formData.append('enableJsonExport', enableJsonExportElement.checked ? '1' : '0');
+        formData.append('enableJsonLExport', enableJsonLExportElement.checked ? '1' : '0');
+        formData.append('enableSarifExport', enableSarifExportElement.checked ? '1' : '0');
+        formData.append('enableMarkdownExport', enableMarkdownExportElement.checked ? '1' : '0');
 
         fetch('run', {
             method: 'POST',

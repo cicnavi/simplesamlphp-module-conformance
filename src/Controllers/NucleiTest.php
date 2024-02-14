@@ -8,8 +8,11 @@ use SimpleSAML\Locale\Translate;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\ModuleConfig;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
+use SimpleSAML\Module\conformance\SspBridge\Utils;
+use SimpleSAML\Utils\HTTP;
 use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,7 +29,7 @@ class NucleiTest
     protected const KEY_SET_SP_REMOTE = 'saml20-sp-remote';
 
     protected const KEY_AssertionConsumerService = 'AssertionConsumerService';
-    const KEY_Location = 'Location';
+    protected const KEY_Location = 'Location';
 
     protected MetaDataStorageHandler $metaDataStorageHandler;
 
@@ -34,6 +37,8 @@ class NucleiTest
         protected Configuration $sspConfig,
         protected ModuleConfig $moduleConfig,
         protected ResponderResolver $responderResolver,
+        protected Utils $utils,
+        protected Filesystem $filesystem,
         MetaDataStorageHandler $metaDataStorageHandler = null,
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
@@ -52,11 +57,12 @@ class NucleiTest
     // TODO mivanci control how many times can this be ran at the same time.
     public function run(Request $request): Response
     {
-        $testId = $request->get('test-type-id');
-        if (!$this->responderResolver->fromTestId($testId)) {
+        $testId = $request->get('testTypeId');
+
+        if (! $testId || !$this->responderResolver->fromTestId($testId)) {
             return new StreamedResponse(function() {echo 'Invalid test selected.';});
         }
-        $spEntityId = $request->get('service-provider-entity-id');
+        $spEntityId = $request->get('serviceProviderEntityId');
         if (!$spEntityId) {
             return new StreamedResponse(function() {echo 'Invalid SP selected.';});
         }
@@ -67,7 +73,13 @@ class NucleiTest
             return new StreamedResponse(function() {echo 'No metadata for provided SP.';});
         }
 
-        $acsUrl = $request->get('assertion-consumer-service-url') ?? $spMetadata->getDefaultEndpoint(self::KEY_AssertionConsumerService);
+        try {
+            $acsUrl = $request->get('assertionConsumerServiceUrl') ??
+                $spMetadata->getDefaultEndpoint(self::KEY_AssertionConsumerService);
+        } catch (\Throwable $exception) {
+            return new StreamedResponse(function() {echo "Could not resolve Assertion Consumer Service (ACS).";});
+        }
+
         if (is_array($acsUrl)) {
             $acsUrl = (string)$acsUrl[self::KEY_Location] ?? '';
         } else {
@@ -77,7 +89,7 @@ class NucleiTest
         $target = parse_url($acsUrl, PHP_URL_HOST);
 
         if (empty($target)) {
-            return new StreamedResponse(function() {echo 'Could not extract target.';});
+            return new StreamedResponse(function() use ($acsUrl) {echo "Could not extract target from ACS: $acsUrl.";});
         }
 
         $nucleiDataDir = $this->sspConfig->getPathValue('datadir', sys_get_temp_dir()) . self::KEY_NUCLEI;
@@ -87,24 +99,72 @@ class NucleiTest
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
         $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates/samltest.yaml';
 
-        // TODO
-        // Extract target from ACS
-
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
+        $conformanceIdpBaseUrl = $this->moduleConfig->getConformanceIdpBaseUrl() ?? $this->utils->http()->getBaseURL();
+        $filename = $this->filesystem->cleanFilename($spEntityId);
+
+
+        $enableDebug = (bool) $request->get('enableDebug');
+        $enableVerbose = (bool) $request->get('enableVerbose');
+        $enableFindingsExport = (bool) $request->get('enableFindingsExport');
+        $enableJsonExport = (bool) $request->get('enableJsonExport');
+        $enableJsonLExport = (bool) $request->get('enableJsonLExport');
+        $enableSarifExport = (bool) $request->get('enableSarifExport');
+        $enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+
         return new StreamedResponse(function() use (
-            $nucleiDataDir, $nucleiTemplatesDir, $request, $testId, $spEntityId, $target,
+            $nucleiDataDir,
+            $nucleiTemplatesDir,
+            $request,
+            $testId,
+            $spEntityId,
+            $target,
+            $acsUrl,
+            $conformanceIdpBaseUrl,
+            $filename,
+            $enableDebug,
+            $enableVerbose,
+            $enableFindingsExport,
+            $enableJsonExport,
+            $enableJsonLExport,
+            $enableSarifExport,
+            $enableMarkdownExport,
         ): void  {
 
-//            die(var_dump($request->get('test-type')));
-            //TODO mivanci Move to separate service (Nuclei Shell Runner)
-            // User -debug for -debug
-            $command = "cd $nucleiDataDir;" .
+            // TODO mivanci Generalizie this so it can be resolved for viewing.
+            $resultOutputDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
+                'results' . DIRECTORY_SEPARATOR .
+                hash('sha256', $spEntityId)  . DIRECTORY_SEPARATOR .
+                date('Y-m-d-H-i-s');
+
+            // Nuclei expects that the export file exists.
+            $outputExportFilename = "$resultOutputDir/findings.txt";
+
+            // TODO mivanci Move to separate service (Nuclei Shell Runner)
+            // TODO mivanci escapeshellarg every argument
+            $command =
+                "mkdir -p $resultOutputDir; " .
                 "nuclei -target $target " .
                 "-env-vars -headless -matcher-status -follow-redirects -disable-update-check " .
                 "-templates $nucleiTemplatesDir " .
-                "-var TEST_ID=$testId -var SP_ENTITY_ID=$spEntityId " .
-                "2>&1"
+                "-var TEST_ID=$testId " .
+                "-var SP_ENTITY_ID=$spEntityId " .
+                "-var CONSUMER_URL=$acsUrl " .
+                "-var CONFORMANCE_IDP_BASE_URL=$conformanceIdpBaseUrl " .
+                "-var RESULT_OUTPUT_DIR=$resultOutputDir " .
+                "-var FILENAME=$filename " .
+                ($enableFindingsExport ? "-output $outputExportFilename " : '') .
+                ($enableJsonExport ? "-json-export $resultOutputDir/json-output.json " : '') .
+                ($enableJsonLExport ? "-jsonl-export $resultOutputDir/jsonl-output.json " : '') .
+                ($enableSarifExport ? "-sarif-export $resultOutputDir/sarif-output.json " : '') .
+                ($enableMarkdownExport ? "-markdown-export $resultOutputDir/markdown " : '') .
+                ($enableDebug ? '-debug ' : '') .
+                ($enableVerbose ? '-verbose ' : '') .
+                "2>&1; " .
+                "nucleiExitStatus=\$?; " .
+                'echo "Command exit status: ${nucleiExitStatus}"; ' .
+                'exit $nucleiExitStatus'
             ;
 
             $descriptors = [
@@ -113,7 +173,7 @@ class NucleiTest
                 2 => ['pipe', 'w']   // stderr
             ];
 
-            $process = proc_open($command, $descriptors, $pipes);
+            $process = proc_open($command, $descriptors, $pipes, $nucleiDataDir);
 
             // Check if the process was successfully started
             if (is_resource($process)) {
@@ -148,7 +208,16 @@ class NucleiTest
                 // Close the process
                 fclose($pipes[1]);
                 fclose($pipes[2]);
-                $return_value = proc_close($process);
+
+//                $procStatus = proc_get_status($process);
+
+//                echo "Process status: " . var_export($procStatus, true);
+
+                $exitCode = proc_close($process);
+
+                echo "Exit code: $exitCode \n";
+                flush();
+                ob_flush();
             }
         },
             200,
