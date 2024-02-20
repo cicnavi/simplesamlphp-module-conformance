@@ -15,5 +15,4 @@ class Filesystem
         // Trim the filename to a reasonable length
         return substr($filename, 0, 255);
     }
-
 }

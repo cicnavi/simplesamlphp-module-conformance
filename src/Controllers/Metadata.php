@@ -10,15 +10,18 @@ use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Metadata\SAMLParser;
 use SimpleSAML\Module;
+use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\GenericStatusFactory;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\GenericStatus;
+use SimpleSAML\Module\conformance\TemplateFactory;
 use SimpleSAML\Utils\XML;
-use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class Metadata
 {
@@ -26,30 +29,44 @@ class Metadata
 
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfig $moduleConfig,
+        protected ModuleConfiguration $moduleConfiguration,
         protected MetaDataStorageHandlerPdo $metaDataStorageHandlerPdo,
         protected XML $xmlUtils,
         protected GenericStatusFactory $genericStatusFactory,
+        protected TemplateFactory $templateFactory,
+        protected Authorization $authorization,
     ) {
     }
 
     /**
-     * @throws ConfigurationError
+     * @throws ConfigurationError|Exception
+     * @throws AuthorizationException
      */
     public function add(Request $request): Response
     {
+        $this->authorization->requireSimpleSAMLphpAdmin();
+
         $status = $this->genericStatusFactory->fromRequest($request);
-        $t = new Template($this->sspConfig, 'conformance:metadata-add.twig');
-        $t->data = [
+        $template = $this->templateFactory->build(
+            ModuleConfiguration::MODULE_NAME . ':metadata/add.twig',
+            Module\conformance\Helpers\Routes::PATH_METADATA_ADD,
+        );
+
+        $template->data += [
             'xmlData' => null,
             ...$status->toArray(),
         ];
 
-        return $t;
+        return $template;
     }
 
+    /**
+     * @throws AuthorizationException
+     */
     public function persist(Request $request): Response
     {
+        $this->authorization->requireAdministrativeToken($request);
+
         $xmlData = $this->getXmlData($request);
 
         $requestStatus = new GenericStatus();
@@ -69,7 +86,7 @@ class Metadata
         try {
             // TODO mivanci Create injected bridge.
             $entities = SAMLParser::parseDescriptorsString($xmlData);
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             $requestStatus->setStatusError()->setMessage('Error parsing XML. ' . $exception->getMessage());
             return $this->prepareResponse($request, $requestStatus, 400);
         }
@@ -94,7 +111,9 @@ class Metadata
         if (empty($spEntities)) {
             $requestStatus->setStatusOk()->setMessage('XML parsed, but no SP metadata found.');
         } else {
-            $requestStatus->setStatusOk()->setMessage(sprintf('Imported metadata for %s SPs.', count($spEntities)));
+            $requestStatus->setStatusOk()->setMessage(
+                sprintf('Imported/Updated metadata for %s SPs.', count($spEntities))
+            );
         }
 
         return $this->prepareResponse($request, $requestStatus);
@@ -104,7 +123,8 @@ class Metadata
     {
         if ($request->request->has('fromUi')) {
             return new RedirectResponse(
-                Module::getModuleURL(ModuleConfig::MODULE_NAME . '/metadata/add', $requestStatus->toArray())
+                // TODO mivanci Move to SSP Bridge
+                Module::getModuleURL(ModuleConfiguration::MODULE_NAME . '/metadata/add', $requestStatus->toArray())
             );
         }
 

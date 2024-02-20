@@ -15,18 +15,18 @@ use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Cache;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
 use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class TestSetup
+class ManualTest
 {
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfig $moduleConfig,
+        protected ModuleConfiguration $moduleConfiguration,
         protected Cache $cache,
         protected StateHelper $stateHelper,
         protected ResponderResolver $responderResolver,
@@ -74,7 +74,7 @@ class TestSetup
         }
 
         // We need to show a page to a user
-        $template = new Template($this->sspConfig, ModuleConfig::MODULE_NAME . ':test-setup.twig');
+        $template = new Template($this->sspConfig, ModuleConfiguration::MODULE_NAME . ':test-setup.twig');
         $template->data[Conformance::KEY_SP_ENTITY_ID] = $spEntityId;
         $template->data[Conformance::KEY_STATE_ID] = $stateId;
         return $template;

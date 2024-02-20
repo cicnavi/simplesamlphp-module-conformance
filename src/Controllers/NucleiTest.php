@@ -9,9 +9,11 @@ use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\Helpers\Routes;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
 use SimpleSAML\Module\conformance\SspBridge\Utils;
+use SimpleSAML\Module\conformance\TemplateFactory;
 use SimpleSAML\Utils\HTTP;
 use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -35,25 +37,25 @@ class NucleiTest
 
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfig $moduleConfig,
+        protected ModuleConfiguration $moduleConfiguration,
         protected ResponderResolver $responderResolver,
         protected Utils $utils,
         protected Filesystem $filesystem,
+        protected TemplateFactory $templateFactory,
+        protected Routes $routes,
         MetaDataStorageHandler $metaDataStorageHandler = null, // TODO mivanci Add to SspBridge.
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
-    }
-
-    public function serviceProvidersIndex(Request $request) : Response
-    {
-        $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
     }
 
     public function setup(Request $request): Response
     {
         $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
 
-        $template = new Template($this->sspConfig, ModuleConfig::MODULE_NAME . ':nuclei-test.twig');
+        $template = $this->templateFactory->build(
+            ModuleConfiguration::MODULE_NAME . ':nuclei/test/setup.twig',
+            Routes::PATH_TEST_NUCLEI_SETUP,
+        );
         $template->data['serviceProviders'] = $serviceProviders;
 
         return $template;
@@ -65,24 +67,32 @@ class NucleiTest
         $testId = $request->get('testTypeId');
 
         if (! $testId || !$this->responderResolver->fromTestId($testId)) {
-            return new StreamedResponse(function() {echo 'Invalid test selected.';});
+            return new StreamedResponse(function () {
+                echo 'Invalid test selected.';
+            });
         }
         $spEntityId = $request->get('serviceProviderEntityId');
         if (!$spEntityId) {
-            return new StreamedResponse(function() {echo 'Invalid SP selected.';});
+            return new StreamedResponse(function () {
+                echo 'Invalid SP selected.';
+            });
         }
 
         try {
             $spMetadata = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, self::KEY_SET_SP_REMOTE);
         } catch (\Throwable $exception) {
-            return new StreamedResponse(function() {echo 'No metadata for provided SP.';});
+            return new StreamedResponse(function () {
+                echo 'No metadata for provided SP.';
+            });
         }
 
         try {
             $acsUrl = $request->get('assertionConsumerServiceUrl') ??
                 $spMetadata->getDefaultEndpoint(self::KEY_AssertionConsumerService);
         } catch (\Throwable $exception) {
-            return new StreamedResponse(function() {echo "Could not resolve Assertion Consumer Service (ACS).";});
+            return new StreamedResponse(function () {
+                echo "Could not resolve Assertion Consumer Service (ACS).";
+            });
         }
 
         if (is_array($acsUrl)) {
@@ -94,19 +104,21 @@ class NucleiTest
         $target = parse_url($acsUrl, PHP_URL_HOST);
 
         if (empty($target)) {
-            return new StreamedResponse(function() use ($acsUrl) {echo "Could not extract target from ACS: $acsUrl.";});
+            return new StreamedResponse(function () use ($acsUrl) {
+                echo "Could not extract target from ACS: $acsUrl.";
+            });
         }
 
         // TODO mivanci Export this path for usage in TestResults.
         $nucleiDataDir = $this->sspConfig->getPathValue('datadir', sys_get_temp_dir()) . self::KEY_NUCLEI;
 
-        $nucleiPublicDir = $this->moduleConfig->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
+        $nucleiPublicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
         $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates/samltest.yaml';
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
-        $conformanceIdpBaseUrl = $this->moduleConfig->getConformanceIdpBaseUrl() ?? $this->utils->http()->getBaseURL();
+        $conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ?? $this->utils->http()->getBaseURL();
         $filename = $this->filesystem->cleanFilename($spEntityId);
 
 
@@ -119,7 +131,7 @@ class NucleiTest
         $enableSarifExport = (bool) $request->get('enableSarifExport');
         $enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
 
-        return new StreamedResponse(function() use (
+        return new StreamedResponse(function () use (
             $nucleiDataDir,
             $nucleiTemplatesDir,
             $request,
@@ -137,7 +149,7 @@ class NucleiTest
             $enableJsonLExport,
             $enableSarifExport,
             $enableMarkdownExport,
-        ): void  {
+        ): void {
 
             // TODO mivanci Generalizie this so it can be resolved for viewing.
             $resultOutputDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
@@ -226,14 +238,14 @@ class NucleiTest
             }
         },
             200,
-            $headers
-        );
+            $headers);
     }
 
     /**
      * Replace ANSI color codes with HTML or other formatting. Update as needed.
      */
-    protected function replaceColorCodes(string $output): string {
+    protected function replaceColorCodes(string $output): string
+    {
         //return $output;
         $colorCodes = array(
             '/\e\[(30|0;30)m/' => '<span class="black-text">',
@@ -286,7 +298,6 @@ class NucleiTest
             $acsArr = $spMetadataConfig->getEndpoints(self::KEY_AssertionConsumerService);
 
             return new JsonResponse(array_unique(array_column($acsArr, self::KEY_Location)));
-
         } catch (\Throwable $exception) {
             // Log
         }

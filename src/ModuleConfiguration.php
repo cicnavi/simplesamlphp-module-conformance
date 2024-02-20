@@ -8,7 +8,7 @@ use Exception;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Errors\InvalidConfigurationException;
 
-class ModuleConfig
+class ModuleConfiguration
 {
     final public const MODULE_NAME = 'conformance';
 
@@ -18,6 +18,9 @@ class ModuleConfig
     final public const FILE_NAME = 'module_conformance.php';
     final public const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
     final public const OPTION_CONFORMANCE_IDP_BASE_URL = 'conformance-idp-base-url';
+    final public const OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP = 'number-of-results-to-keep-per-sp';
+    final public const OPTION_ADMINISTRATIVE_TOKENS = 'administrative-tokens';
+    final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
 
     /**
      * Contains configuration from module configuration file.
@@ -79,5 +82,38 @@ class ModuleConfig
     public function getConformanceIdpBaseUrl(): ?string
     {
         return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_BASE_URL, null);
+    }
+
+    public function getAdministrativeTokens(): array
+    {
+        return $this->getConfig()->getOptionalArray(self::OPTION_ADMINISTRATIVE_TOKENS, null) ?? [];
+    }
+
+    public function getServiceProviderTokens(): array
+    {
+        return $this->getConfig()->getOptionalArray(self::OPTION_SERVICE_PROVIDER_TOKENS, null) ?? [];
+    }
+
+    public function hasAdministrativeToken(string $token): bool
+    {
+        return array_key_exists($token, $this->getAdministrativeTokens());
+    }
+
+    public function hasServiceProviderToken(string $token, string $spEntityId): bool
+    {
+        $tokens = $this->getServiceProviderTokens();
+
+        if (! array_key_exists($token, $tokens)) {
+            return false;
+        }
+
+        if (
+            (! is_array($tokenSps = $tokens[$token])) ||
+            (! in_array($spEntityId, $tokenSps))
+        ) {
+            return false;
+        }
+
+        return true;
     }
 }

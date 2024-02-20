@@ -15,14 +15,17 @@ use SimpleSAML\Error\NoState;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\Helpers\Routes;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
+use SimpleSAML\Module\conformance\TemplateFactory;
 use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
-class TestResults
+class NucleiResults
 {
     protected const KEY_SET_SP_REMOTE = 'saml20-sp-remote'; // TODO mivanci Add to SspBridge class.
     const KEY_NUCLEI = 'nuclei';
@@ -30,7 +33,8 @@ class TestResults
 
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfig $moduleConfig,
+        protected ModuleConfiguration $moduleConfiguration,
+        protected TemplateFactory $templateFactory,
         MetaDataStorageHandler $metaDataStorageHandler = null, // TODO mivanci Add to SspBridge.
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
@@ -61,7 +65,10 @@ class TestResults
             arsort($results);
         }
 
-        $template = new Template($this->sspConfig, ModuleConfig::MODULE_NAME . ':test-results.twig');
+        $template = $this->templateFactory->build(
+            ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
+            Routes::PATH_TEST_RESULTS,
+        );
         $template->data['serviceProviders'] = $serviceProviders;
         $template->data['selectedServiceProviderEntityId'] = $selectedServiceProviderEntityId;
         $template->data['results'] = $results;
@@ -78,7 +85,10 @@ class TestResults
         if (! file_exists($filePath)) {
             return new Response(null, 404);
         }
-        return new BinaryFileResponse($filePath);
+        $binaryFileResponse = new BinaryFileResponse($filePath);
+        $binaryFileResponse->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+
+        return $binaryFileResponse;
     }
 
     // TODO mivanci move to common resolver used in NucleiTest

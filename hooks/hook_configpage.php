@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use SimpleSAML\Locale\Translate;
 use SimpleSAML\Module\conformance\Helpers\Routes;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\XHTML\Template;
 
 /** @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection Reference is used by SimpleSAMLphp */
@@ -23,5 +23,5 @@ function conformance_hook_configpage(Template &$template): void
         'text' => Translate::noop('Conformance: Add SP metadata'),
     ];
 
-    $template->getLocalization()->addModuleDomain(ModuleConfig::MODULE_NAME);
+    $template->getLocalization()->addModuleDomain(ModuleConfiguration::MODULE_NAME);
 }

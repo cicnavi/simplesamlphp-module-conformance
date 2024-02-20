@@ -1,12 +1,13 @@
-{% set pagetitle = 'Nuclei Test'|trans %}
-{% extends "base.twig" %}
+{% set subPageTitle = 'Run Nuclei Test'|trans %}
 
-{% block preload %}
-  <link rel="stylesheet" href="{{ asset('css/src/default.css', 'conformance') }}">
-{% endblock %}
+{% extends "@conformance/base.twig" %}
 
-{% block content %}
-  <h1>{{ pagetitle }}</h1>
+{% block conformanceContent %}
+  <p>
+    Use this form to run tests using Nuclei tool. Nuclei will be invoked in the backend with all output being redirected
+    and streamed below. All exported artifacts will be available as Nuclei Results.
+    Export to JSON format is recommended.
+  </p>
 
   <div class="form-container">
     <form method="post">
@@ -43,7 +44,7 @@
       <div class="form-group">
         <label for="enableDebug">
           <input type="checkbox" id="enableDebug">
-          Show all requests and responses?
+          Show requests and responses?
         </label>
 
         <label for="enableVerbose">
@@ -54,16 +55,25 @@
         <label for="enableOutputExport">
           <input type="checkbox" id="enableOutputExport">
           Export output to a file?
+          <span class="help">
+            Choose if you want to export Nuclei output that you can see below to a file.
+          </span>
         </label>
 
         <label for="enableFindingsExport">
           <input type="checkbox" id="enableFindingsExport">
           Export findings to a file?
+          <span class="help">
+            Choose if you want to export specific lines corresponding to matched rules (findings) from Nuclei to a file.
+          </span>
         </label>
 
         <label for="enableJsonExport">
           <input type="checkbox" id="enableJsonExport">
           Export results in JSON format?
+          <span class="help">
+            Recommended.
+          </span>
         </label>
 
         <label for="enableJsonLExport">
@@ -90,17 +100,14 @@
   </div>
 
   <div class="cmd-output">
+    {# TODO mivanci Escape HTML output. #}
     <pre id="cmd-output">{{ output ?? 'Waiting for test initialization.' }}</pre>
   </div>
 
 {% endblock %}
 
-{% block foot %}
-<div>
-  <input type="hidden" id="canRunTest" value="{{ canRunTest }}">
-</div>
-{% endblock %}
-
 {% block postload %}
+  {{ parent() }}
+
   <script src="{{ asset('js/src/nuclei-test-run.js', 'conformance') }}"></script>
 {% endblock %}

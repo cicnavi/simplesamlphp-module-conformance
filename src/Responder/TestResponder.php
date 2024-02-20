@@ -27,7 +27,7 @@ use SimpleSAML\Error;
 use SimpleSAML\Logger as StaticLogger;
 use SimpleSAML\Configuration;
 use SimpleSAML\IdP;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\saml\IdP\SAML2;
 use SimpleSAML\Module\saml\Message;
 use SimpleSAML\Stats;
@@ -41,7 +41,7 @@ use SimpleSAML\Utils\Random;
 class TestResponder extends SAML2 implements ResponderInterface
 {
     protected Configuration $sspConfig;
-    protected ModuleConfig $moduleConfig;
+    protected ModuleConfiguration $moduleConfiguration;
     protected LoggerInterface $logger;
     protected HTTP $httpUtil;
     protected Random $randomUtil;
@@ -58,13 +58,13 @@ class TestResponder extends SAML2 implements ResponderInterface
 
     public function __construct(
         Configuration $sspConfig = null,
-        ModuleConfig $moduleConfig = null,
+        ModuleConfiguration $moduleConfig = null,
         LoggerInterface $logger = null,
         HTTP $httpUtil = null,
         Random $randomUtil = null,
     ) {
         $this->sspConfig = $sspConfig ?? Configuration::getInstance();
-        $this->moduleConfig = $moduleConfig ?? new ModuleConfig();
+        $this->moduleConfiguration = $moduleConfig ?? new ModuleConfiguration();
         $this->logger = $logger ?? new Logger();
         $this->httpUtil = $httpUtil ?? new HTTP();
         $this->randomUtil = $randomUtil ?? new Random();
@@ -108,7 +108,7 @@ class TestResponder extends SAML2 implements ResponderInterface
         $this->validate($state);
 
         // Set the dummy (wrong) private key to use for signature.
-        $state['SPMetadata']['signature.privatekey'] = $this->moduleConfig->getDummyPrivateKey();
+        $state['SPMetadata']['signature.privatekey'] = $this->moduleConfiguration->getDummyPrivateKey();
 
         $this->initialize($state);
         $this->logger->info('Sending SAML 2.0 Response to ' . var_export($this->spEntityId, true));

@@ -1,0 +1,104 @@
+<?php
+
+namespace SimpleSAML\Module\conformance;
+
+use SimpleSAML\Configuration;
+use SimpleSAML\Locale\Translate;
+use SimpleSAML\Module\conformance\Errors\AuthorizationException;
+use SimpleSAML\Module\conformance\SspBridge\Utils;
+use Symfony\Component\HttpFoundation\Request;
+use Throwable;
+
+class Authorization
+{
+    public const KEY_TOKEN = 'token';
+    public const KEY_AUTHORIZATION = 'authorization';
+
+    public const KEY_SP_ENTITY_ID = 'spEntityId';
+
+    public function __construct(
+        protected Configuration $sspConfig,
+        protected ModuleConfiguration $moduleConfiguration,
+        protected Utils $utils,
+    ) {
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    public function requireSimpleSAMLphpAdmin(): void
+    {
+        if (! $this->utils->auth()->isAdmin()) {
+            throw new AuthorizationException(Translate::noop('SimpleSAMLphp Admin access required.'));
+        }
+    }
+
+    /**
+     * Require a valid administrative token to be set. Administrative token can perform actions as SimpleSAMLphp admin.
+     * @throws AuthorizationException
+     */
+    public function requireAdministrativeToken(Request $request): void
+    {
+        try {
+            $this->requireSimpleSAMLphpAdmin();
+            return;
+        } catch (Throwable) {
+            // Not admin, check for administrative token.
+        }
+
+        if (empty($token = $this->findToken($request))) {
+            throw new AuthorizationException(Translate::noop('Administrative token not provided.'));
+        }
+
+        if (! $this->moduleConfiguration->hasAdministrativeToken($token)) {
+            throw new AuthorizationException(Translate::noop('Administrative token not valid.'));
+        }
+    }
+
+    /**
+     * Require a valid Service Provider (SP) token to be set. Token is only valid for actions for the given SP.
+     * @throws AuthorizationException
+     */
+    public function requireServiceProviderToken(Request $request, string $spEntityId = null): void
+    {
+        if (empty($token = $this->findToken($request))) {
+            throw new AuthorizationException(Translate::noop('Service provider token not provided.'));
+        }
+
+        if (empty($spEntityId ??= $this->findSpEntityId($request))) {
+            throw new AuthorizationException(Translate::noop('Service provider entity ID not provided.'));
+        }
+
+        if (! $this->moduleConfiguration->hasServiceProviderToken($token, $spEntityId)) {
+            throw new AuthorizationException(Translate::noop('Service provider token not valid.'));
+        }
+    }
+
+    protected function findToken(Request $request): ?string
+    {
+        if ($token = trim((string) $request->get(self::KEY_TOKEN))) {
+            return $token;
+        }
+
+        if ($request->headers->has(self::KEY_AUTHORIZATION)) {
+            return trim(
+                (string) preg_replace(
+                    '/^\s*Bearer\s/',
+                    '',
+                    $request->headers->get(self::KEY_AUTHORIZATION)
+                )
+            );
+        }
+
+        return null;
+    }
+
+    protected function findSpEntityId(Request $request): ?string
+    {
+        if ($spEntityId = trim((string) $request->get(self::KEY_SP_ENTITY_ID))) {
+            return $spEntityId;
+        }
+
+        return null;
+    }
+}

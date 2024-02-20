@@ -6,7 +6,7 @@ namespace SimpleSAML\Module\conformance\Helpers;
 
 use SimpleSAML\Error\CriticalConfigurationError;
 use SimpleSAML\Error\Exception;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Utils\HTTP;
 
 use function sprintf;
@@ -14,6 +14,8 @@ use function sprintf;
 class Routes
 {
     final public const PATH_METADATA_ADD = 'metadata/add';
+    final public const PATH_TEST_NUCLEI_SETUP = 'nuclei/test/setup';
+    final public const PATH_TEST_RESULTS = 'nuclei/results';
 
     protected HTTP $sspHttpUtils;
     protected Arr $arr;
@@ -27,10 +29,15 @@ class Routes
     /**
      * @throws Exception
      */
-    public function getUrl(string $path, array $queryParameters = [], array $fragmentParameters = []): string
-    {
+    public function getUrl(
+        string $path,
+        ?string $forModuleName = ModuleConfiguration::MODULE_NAME,
+        array $queryParameters = [],
+        array $fragmentParameters = []
+    ): string {
+
         try {
-            $url = $this->sspHttpUtils->getBaseURL() . 'module.php/' . ModuleConfig::MODULE_NAME . '/' . $path;
+            $url = $this->sspHttpUtils->getBaseURL();
             // @codeCoverageIgnoreStart
             // SSP dumps some exception context data when simulating exception, so will ignore coverage for this...
         } catch (CriticalConfigurationError $exception) {
@@ -38,6 +45,12 @@ class Routes
             throw new Exception($message, $exception->getCode(), $exception);
             // @codeCoverageIgnoreEnd
         }
+
+        if ($forModuleName) {
+            $url .=  'module.php/' . $forModuleName . '/';
+        }
+
+        $url .=  $path;
 
         if (!empty($queryParameters)) {
             $url = $this->sspHttpUtils->addURLParameters($url, $queryParameters);

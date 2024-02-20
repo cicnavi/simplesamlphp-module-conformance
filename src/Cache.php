@@ -21,7 +21,7 @@ class Cache
     public function __construct(CacheInterface $cache = null)
     {
         try {
-            $this->cache = $cache ?? new SimpleFileCache(ModuleConfig::MODULE_NAME . '-cache');
+            $this->cache = $cache ?? new SimpleFileCache(ModuleConfiguration::MODULE_NAME . '-cache');
         } catch (Throwable $exception) {
             throw new CacheException('Error initializing cache instance: ' . $exception->getMessage());
         }
@@ -77,6 +77,6 @@ class Cache
 
     protected function getTestIdCacheKey(string $spEntityId): string
     {
-        return hash('sha256', ModuleConfig::MODULE_NAME . '-' . Conformance::KEY_TEST_ID . '-' . $spEntityId);
+        return hash('sha256', ModuleConfiguration::MODULE_NAME . '-' . Conformance::KEY_TEST_ID . '-' . $spEntityId);
     }
 }

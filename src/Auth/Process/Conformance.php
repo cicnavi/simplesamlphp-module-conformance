@@ -9,7 +9,7 @@ use SimpleSAML\Auth\ProcessingFilter;
 use SimpleSAML\Module\conformance\Cache;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
 use SimpleSAML\Module\conformance\SspBridge;
 use Throwable;
@@ -18,7 +18,7 @@ class Conformance extends ProcessingFilter
 {
     final public const KEY_TEST_ID = 'testId';
     final public const KEY_RESPONDER = 'Responder';
-    final public const KEY_STATE_STAGE_ID_TEST_SETUP = ModuleConfig::MODULE_NAME . '-test-setup';
+    final public const KEY_STATE_STAGE_ID_TEST_SETUP = ModuleConfiguration::MODULE_NAME . '-test-setup';
     final public const KEY_STATE_ID = 'StateId';
     final public const KEY_SP_ENTITY_ID = 'spEntityId';
 
