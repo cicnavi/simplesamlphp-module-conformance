@@ -1,0 +1,53 @@
+id: incubator-saml-test-headless-all
+info:
+  name: Incubator SAML test
+  severity: low
+  tags: headless,extractor
+  author: T&I Incubator
+variables:
+  filename: "{{replace_regex(BaseURL,'(\\W+)','_')}}"
+  TEST_CASES:
+    - noSignature
+    - invalidSignature
+  TEST_CASE: "standardResponse" # Start with this test.
+
+flow: |
+  headless();
+  set("VALID_STATUS_CODE", template["http_status_code"]);
+  set("VALID_BODY", template["http_body"]);
+  for (let testcase of iterate(template["TEST_CASES"])) {
+    set("TEST_CASE", testcase);
+    headless();
+  }
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{trim_suffix(CONFORMANCE_IDP_BASE_URL, '/')}}/module.php/conformance/test/setup?testId={{url_encode(TEST_CASE)}}&spEntityId={{url_encode(SP_ENTITY_ID)}}&token={{url_encode(TOKEN)}}"
+      - action: waitload
+      - action: navigate
+        args:
+          url: "{{trim_suffix(CONFORMANCE_IDP_BASE_URL,'/')}}/saml2/idp/SSOService.php?spentityid={{url_encode(SP_ENTITY_ID)}}&ConsumerURL={{url_encode(CONSUMER_URL)}}"
+      - action: waitload
+      - action: screenshot
+        args:
+          fullpage: "true"
+          mkdir: "true"
+          to: "{{RESULT_OUTPUT_DIR}}/{{TEST_CASE}}-{{FILENAME}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+          - 303
+      - type: dsl
+        dsl:
+          # ignore the happy case
+          - '!contains(TEST_CASE, "standardResponse")'
+        condition: and
+    extractors:
+      - type: dsl
+        dsl:
+          - "TEST_CASE"

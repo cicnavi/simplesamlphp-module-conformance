@@ -13,6 +13,7 @@ use SimpleSAML\Error\NoState;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
+use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Cache;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -30,6 +31,7 @@ class ManualTest
         protected Cache $cache,
         protected StateHelper $stateHelper,
         protected ResponderResolver $responderResolver,
+        protected Authorization $authorization,
     ) {
     }
 
@@ -46,12 +48,15 @@ class ManualTest
         // Call from external process which sets next test for particular SP.
         // TODO mivanci Consider moving this to separate route.
         if ($testId && $spEntityId) {
+            // We need to authorize this specific call, since it is external.
+            $this->authorization->requireServiceProviderToken($request, $spEntityId);
             // TODO mivanci Validate $testId and $spEntityId
             $this->cache->setTestId($testId, $spEntityId);
             return new JsonResponse(['status' => 'ok']);
         }
 
         // Call from authproc filter.
+        // Leave this unauthorized so any registered SP can utilize manual test initiated from the SP.
         $stateId = $request->query->get(Conformance::KEY_STATE_ID);
         if (is_null($stateId)) {
             throw new Exception('Missing required StateId query parameter.');
@@ -74,7 +79,7 @@ class ManualTest
         }
 
         // We need to show a page to a user
-        $template = new Template($this->sspConfig, ModuleConfiguration::MODULE_NAME . ':test-setup.twig');
+        $template = new Template($this->sspConfig, ModuleConfiguration::MODULE_NAME . ':test/manual.twig');
         $template->data[Conformance::KEY_SP_ENTITY_ID] = $spEntityId;
         $template->data[Conformance::KEY_STATE_ID] = $stateId;
         return $template;

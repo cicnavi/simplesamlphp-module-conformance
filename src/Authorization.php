@@ -12,9 +12,9 @@ use Throwable;
 class Authorization
 {
     public const KEY_TOKEN = 'token';
-    public const KEY_AUTHORIZATION = 'authorization';
+    public const KEY_AUTHORIZATION = 'Authorization';
 
-    public const KEY_SP_ENTITY_ID = 'spEntityId';
+    public const KEY_SP_ENTITY_ID = 'serviceProviderEntityId';
 
     public function __construct(
         protected Configuration $sspConfig,
@@ -26,10 +26,37 @@ class Authorization
     /**
      * @throws AuthorizationException
      */
-    public function requireSimpleSAMLphpAdmin(): void
+    public function requireSimpleSAMLphpAdmin(bool $forceAdminAuthentication = false): void
     {
+        if ($forceAdminAuthentication) {
+            $this->utils->auth()->requireAdmin();
+        }
+
         if (! $this->utils->auth()->isAdmin()) {
             throw new AuthorizationException(Translate::noop('SimpleSAMLphp Admin access required.'));
+        }
+    }
+
+    /**
+     * Require a valid local test runner token. Local test runner token can perform actions as SimpleSAMLphp admin.
+     *
+     * @throws AuthorizationException
+     */
+    public function requireLocalTestRunnerToken(Request $request): void
+    {
+        try {
+            $this->requireSimpleSAMLphpAdmin();
+            return;
+        } catch (Throwable) {
+            // Not admin, check for local test runner token.
+        }
+
+        if (empty($token = $this->findToken($request))) {
+            throw new AuthorizationException(Translate::noop('Token not provided.'));
+        }
+
+        if (! $this->moduleConfiguration->hasLocalTestRunnerToken($token)) {
+            throw new AuthorizationException(Translate::noop('Local test runner token not valid.'));
         }
     }
 
@@ -40,14 +67,14 @@ class Authorization
     public function requireAdministrativeToken(Request $request): void
     {
         try {
-            $this->requireSimpleSAMLphpAdmin();
+            $this->requireLocalTestRunnerToken($request);
             return;
         } catch (Throwable) {
-            // Not admin, check for administrative token.
+            // Not local test runner token, check for administrative token.
         }
 
         if (empty($token = $this->findToken($request))) {
-            throw new AuthorizationException(Translate::noop('Administrative token not provided.'));
+            throw new AuthorizationException(Translate::noop('Token not provided.'));
         }
 
         if (! $this->moduleConfiguration->hasAdministrativeToken($token)) {
@@ -61,12 +88,18 @@ class Authorization
      */
     public function requireServiceProviderToken(Request $request, string $spEntityId = null): void
     {
-        if (empty($token = $this->findToken($request))) {
-            throw new AuthorizationException(Translate::noop('Service provider token not provided.'));
+        try {
+            $this->requireAdministrativeToken($request);
+            return;
+        } catch (Throwable) {
+            // Not administrative token, check for service provider token.
         }
-
         if (empty($spEntityId ??= $this->findSpEntityId($request))) {
             throw new AuthorizationException(Translate::noop('Service provider entity ID not provided.'));
+        }
+
+        if (empty($token = $this->findToken($request))) {
+            throw new AuthorizationException(Translate::noop('Token not provided.'));
         }
 
         if (! $this->moduleConfiguration->hasServiceProviderToken($token, $spEntityId)) {

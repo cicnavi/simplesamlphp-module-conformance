@@ -44,7 +44,7 @@ class Metadata
      */
     public function add(Request $request): Response
     {
-        $this->authorization->requireSimpleSAMLphpAdmin();
+        $this->authorization->requireSimpleSAMLphpAdmin(true);
 
         $status = $this->genericStatusFactory->fromRequest($request);
         $template = $this->templateFactory->build(

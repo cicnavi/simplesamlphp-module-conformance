@@ -1,0 +1,77 @@
+id: incubator-saml-test-raw-all
+info:
+  name: SAML signature validation
+  author: T&I Incubator, GÉANT
+  severity: high
+  tags: saml
+variables:
+  AUTHORIZATION: "Bearer abc123"
+  CONFORMANCE_IDP_HOSTNAME: conformance-idp.maiv1.incubator.geant.org
+  TEST_CASES:
+    - noSignature
+    - invalidSignature
+  TEST_CASE: "standardResponse" # Start with this test.
+
+flow: |
+  http();
+  set("VALID_STATUS_CODE", template["http_status_code"]);
+  set("VALID_BODY", template["http_body"]);
+  for (let testcase of iterate(template["TEST_CASES"])) {
+    set("TEST_CASE", testcase);
+    http();
+  }
+
+http:
+  - raw:
+      - |
+        @Host: https://{{CONFORMANCE_IDP_HOSTNAME}}
+        POST /module.php/conformance/test/setup?testId={{url_encode(TEST_CASE)}}&spEntityId={{url_encode(SP_ENTITY_ID)}} HTTP/1.1
+        Host: {{CONFORMANCE_IDP_HOSTNAME}}
+        Authorization: {{AUTHORIZATION}}
+
+      - |
+        @Host: https://{{CONFORMANCE_IDP_HOSTNAME}}
+        GET /saml2/idp/SSOService.php?spentityid={{url_encode(SP_ENTITY_ID)}}&ConsumerURL={{url_encode(CONSUMER_URL)}} HTTP/1.1
+        Host: {{CONFORMANCE_IDP_HOSTNAME}}
+        Authorization: {{AUTHORIZATION}}
+    disable-path-automerge: true
+    extractors:
+      - type: xpath
+        name: acs
+        internal: true
+        attribute: action
+        xpath:
+          - '/html/body/form'
+      - type: xpath
+        name: samlresponse
+        internal: true
+        attribute: value
+        xpath:
+          - '/html/body/form/input[2]'
+  # HTTP-POST binding
+  - raw:
+      - |
+        @Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "/.*", "")}}
+        POST {{trim(acs,"[]")}} HTTP/1.1
+        Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "/.*", "")}}
+        Content-Type: application/x-www-form-urlencoded
+
+        SAMLResponse={{url_encode(trim(samlresponse,"[]"))}}
+
+    disable-path-automerge: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+          - 303
+      - type: dsl
+        dsl:
+          # ignore the happy case
+          - '!contains(TEST_CASE, "standardResponse")'
+        condition: and
+    extractors:
+      - type: dsl
+        dsl:
+          - 'TEST_CASE'

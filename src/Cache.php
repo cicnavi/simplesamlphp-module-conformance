@@ -21,7 +21,7 @@ class Cache
     public function __construct(CacheInterface $cache = null)
     {
         try {
-            $this->cache = $cache ?? new SimpleFileCache(ModuleConfiguration::MODULE_NAME . '-cache');
+            $this->cache = $cache ?? new SimpleFileCache(ModuleConfiguration::MODULE_NAME . '-cache', );
         } catch (Throwable $exception) {
             throw new CacheException('Error initializing cache instance: ' . $exception->getMessage());
         }

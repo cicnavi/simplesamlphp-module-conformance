@@ -3,6 +3,7 @@
 namespace SimpleSAML\Module\conformance\Controllers;
 
 use SimpleSAML\Configuration;
+use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\TemplateFactory;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +15,7 @@ class Overview
         protected Configuration $sspConfig,
         protected ModuleConfiguration $moduleConfiguration,
         protected TemplateFactory $templateFactory,
+        protected Authorization $authorization,
     ) {
     }
 

@@ -21,6 +21,7 @@ class ModuleConfiguration
     final public const OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP = 'number-of-results-to-keep-per-sp';
     final public const OPTION_ADMINISTRATIVE_TOKENS = 'administrative-tokens';
     final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
+    final public const OPTION_LOCAL_TEST_RUNNER_TOKEN = 'local-test-runner-token';
 
     /**
      * Contains configuration from module configuration file.
@@ -84,6 +85,11 @@ class ModuleConfiguration
         return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_BASE_URL, null);
     }
 
+    public function getLocalTestRunnerToken(): string
+    {
+        return $this->getConfig()->getString(self::OPTION_LOCAL_TEST_RUNNER_TOKEN);
+    }
+
     public function getAdministrativeTokens(): array
     {
         return $this->getConfig()->getOptionalArray(self::OPTION_ADMINISTRATIVE_TOKENS, null) ?? [];
@@ -92,6 +98,11 @@ class ModuleConfiguration
     public function getServiceProviderTokens(): array
     {
         return $this->getConfig()->getOptionalArray(self::OPTION_SERVICE_PROVIDER_TOKENS, null) ?? [];
+    }
+
+    public function hasLocalTestRunnerToken(string $token): bool
+    {
+        return $token === $this->getLocalTestRunnerToken();
     }
 
     public function hasAdministrativeToken(string $token): bool

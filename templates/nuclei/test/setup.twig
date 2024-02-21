@@ -20,16 +20,6 @@
         </select>
       </div>
 
-      {# TODO mivanci generate from a list of available tests. #}
-      <div class="form-group">
-        <label for="testTypeId">Test type</label>
-        <select id="testTypeId" name="Test type">
-          <option value="standardResponse" selected>Standard response</option>
-          <option value="noSignature">No signature</option>
-          <option value="invalidSignature">Invalid signature</option>
-        </select>
-      </div>
-
       <div class="form-group">
         <label for="assertionConsumerServiceUrl">Assertion Consumer Service (ACS, optional)</label>
         <select id="assertionConsumerServiceUrl">
@@ -39,6 +29,16 @@
           If you need to test specific ACS, select it from here. Otherwise, you can leave it empty to resolve it
           automatically.
         </span>
+      </div>
+
+      {# TODO mivanci generate from a list of available templates. #}
+      <div class="form-group">
+        <label for="templateId">Template</label>
+        <select id="templateId" name="Test type">
+          <option value="all-templates" selected>All templates</option>
+          <option value="saml-headless-all">SAML test template using headless browser</option>
+          <option value="saml-raw-all">SAML test template using raw HTTP</option>
+        </select>
       </div>
 
       <div class="form-group">

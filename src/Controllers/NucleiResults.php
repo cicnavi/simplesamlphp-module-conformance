@@ -15,6 +15,7 @@ use SimpleSAML\Error\NoState;
 use SimpleSAML\HTTP\RunnableResponse;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
+use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\TemplateFactory;
@@ -35,6 +36,7 @@ class NucleiResults
         protected Configuration $sspConfig,
         protected ModuleConfiguration $moduleConfiguration,
         protected TemplateFactory $templateFactory,
+        protected Authorization $authorization,
         MetaDataStorageHandler $metaDataStorageHandler = null, // TODO mivanci Add to SspBridge.
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
@@ -45,6 +47,13 @@ class NucleiResults
         $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
 
         $selectedServiceProviderEntityId = (string) $request->get('serviceProviderEntityId');
+
+        if ($selectedServiceProviderEntityId) {
+            // Authorization for specific SP.
+            $this->authorization->requireServiceProviderToken($request, $selectedServiceProviderEntityId);
+        } else {
+            $this->authorization->requireAdministrativeToken($request);
+        }
 
         $results = [];
         if (
@@ -79,6 +88,9 @@ class NucleiResults
     public function download(Request $request): Response
     {
         $serviceProviderEntityId = (string) $request->get('serviceProviderEntityId');
+
+        $this->authorization->requireServiceProviderToken($request, $serviceProviderEntityId);
+
         $result = (string) $request->get('result');
         $filePath = $this->resolveResultsDir($serviceProviderEntityId) . $result;
 

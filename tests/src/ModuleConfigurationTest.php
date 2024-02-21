@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \SimpleSAML\Module\conformance\ModuleConfiguration
  */
-class ModuleConfigTest extends TestCase
+class ModuleConfigurationTest extends TestCase
 {
     protected array $configOverrides = [];
 

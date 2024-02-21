@@ -72,7 +72,7 @@
         const outputElement = document.getElementById('cmd-output');
         outputElement.innerHTML = 'Waiting...';
 
-        const testTypeInputElement = document.getElementById('testTypeId');
+        const templateInputElement = document.getElementById('templateId');
         const enableDebugElement = document.getElementById('enableDebug');
         const enableVerboseElement = document.getElementById('enableVerbose');
         const enableOutputExportElement = document.getElementById('enableOutputExport');
@@ -83,7 +83,7 @@
         const enableMarkdownExportElement = document.getElementById('enableMarkdownExport');
 
         const formData = new URLSearchParams();
-        formData.append('testTypeId', testTypeInputElement.value);
+        formData.append('templateId', templateInputElement.value);
         formData.append('serviceProviderEntityId', serviceProviderEntityIdSelect.value);
         formData.append('enableDebug', enableDebugElement.checked ? '1' : '0');
         formData.append('enableVerbose', enableVerboseElement.checked ? '1' : '0');

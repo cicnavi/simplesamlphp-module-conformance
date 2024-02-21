@@ -7,6 +7,7 @@ use SimpleSAML\Error\Exception;
 use SimpleSAML\Locale\Translate;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
+use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
@@ -32,6 +33,8 @@ class NucleiTest
 
     protected const KEY_AssertionConsumerService = 'AssertionConsumerService';
     protected const KEY_Location = 'Location';
+    protected const KEY_ALL_TEMPLATES = 'all-templates';
+    protected const KEY_TEMPLATE_EXTENSION = '.yaml';
 
     protected MetaDataStorageHandler $metaDataStorageHandler;
 
@@ -43,6 +46,7 @@ class NucleiTest
         protected Filesystem $filesystem,
         protected TemplateFactory $templateFactory,
         protected Routes $routes,
+        protected Authorization $authorization,
         MetaDataStorageHandler $metaDataStorageHandler = null, // TODO mivanci Add to SspBridge.
     ) {
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
@@ -50,6 +54,8 @@ class NucleiTest
 
     public function setup(Request $request): Response
     {
+        $this->authorization->requireSimpleSAMLphpAdmin(true);
+
         $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
 
         $template = $this->templateFactory->build(
@@ -66,17 +72,20 @@ class NucleiTest
     {
         $testId = $request->get('testTypeId');
 
-        if (! $testId || !$this->responderResolver->fromTestId($testId)) {
+        if ($testId && !$this->responderResolver->fromTestId($testId)) {
             return new StreamedResponse(function () {
-                echo 'Invalid test selected.';
+                echo 'Invalid test ID.';
             });
         }
+
         $spEntityId = $request->get('serviceProviderEntityId');
         if (!$spEntityId) {
             return new StreamedResponse(function () {
                 echo 'Invalid SP selected.';
             });
         }
+
+        $this->authorization->requireServiceProviderToken($request, $spEntityId);
 
         try {
             $spMetadata = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, self::KEY_SET_SP_REMOTE);
@@ -112,9 +121,29 @@ class NucleiTest
         // TODO mivanci Export this path for usage in TestResults.
         $nucleiDataDir = $this->sspConfig->getPathValue('datadir', sys_get_temp_dir()) . self::KEY_NUCLEI;
 
+
         $nucleiPublicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
-        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates/samltest.yaml';
+        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates/'
+//            . 'saml-test-headless.yaml'
+        ;
+
+        $templateId = $request->get('templateId');
+        if (! $templateId) {
+            return new StreamedResponse(function () {
+                echo 'No template ID provided.';
+            });
+        }
+
+        if ($templateId !== self::KEY_ALL_TEMPLATES) {
+            $nucleiTemplatesDir .= $templateId . self::KEY_TEMPLATE_EXTENSION;
+        }
+
+        if (!file_exists($nucleiTemplatesDir)) {
+            return new StreamedResponse(function () use ($nucleiTemplatesDir) {
+                echo "Template not valid ($nucleiTemplatesDir).";
+            });
+        }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
@@ -130,6 +159,8 @@ class NucleiTest
         $enableJsonLExport = (bool) $request->get('enableJsonLExport');
         $enableSarifExport = (bool) $request->get('enableSarifExport');
         $enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+
+        $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
         return new StreamedResponse(function () use (
             $nucleiDataDir,
@@ -149,6 +180,7 @@ class NucleiTest
             $enableJsonLExport,
             $enableSarifExport,
             $enableMarkdownExport,
+            $token,
         ): void {
 
             // TODO mivanci Generalizie this so it can be resolved for viewing.
@@ -173,6 +205,7 @@ class NucleiTest
                 "-var CONFORMANCE_IDP_BASE_URL=$conformanceIdpBaseUrl " .
                 "-var RESULT_OUTPUT_DIR=$resultOutputDir " .
                 "-var FILENAME=$filename " .
+                "-var TOKEN=$token " .
                 ($enableFindingsExport ? "-output $outputExportFilename " : '') .
                 ($enableJsonExport ? "-json-export $resultOutputDir/json-output.json " : '') .
                 ($enableJsonLExport ? "-jsonl-export $resultOutputDir/jsonl-output.json " : '') .
