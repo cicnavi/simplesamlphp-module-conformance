@@ -1,0 +1,36 @@
+version: '3'
+services:
+  mariadb:
+    image: bitnami/mariadb:11.2
+    container_name: mariadb
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_SKIP_TEST_DB=yes
+  conformance_idp:
+    build: ./conformance_idp/.
+    container_name: conformance_idp
+    restart: always
+    depends_on:
+      - mariadb
+    volumes:
+      # TODO: - /path/to/config:/var/simplesamlphp/config:ro
+      # TODO: - /path/to/metadata:/var/simplesamlphp/metadata:ro
+      - public:/var/simplesamlphp/public
+  reverseproxy:
+    image: bitnami/nginx:1.25
+    container_name: reverseproxy
+    restart: always
+    depends_on:
+      - conformance_idp
+    volumes:
+      - ./conformance_idp.conf:/opt/bitnami/nginx/conf/server_blocks/conformance_idp.conf:ro
+      - public:/var/simplesamlphp/public:ro
+    ports:
+      - "80:80"
+      # TODO: - "443:443"
+    environment:
+      - NGINX_ENABLE_ABSOLUTE_REDIRECT=yes
+
+volumes:
+  public:

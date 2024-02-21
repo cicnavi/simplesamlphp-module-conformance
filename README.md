@@ -1,12 +1,15 @@
 [![Test](https://github.com/cicnavi/simplesamlphp-module-conformance/actions/workflows/test.yml/badge.svg)](https://github.com/cicnavi/simplesamlphp-module-conformance/actions/workflows/test.yml)
 
 # simplesamlphp-module-conformance
+
 SimpleSAMLphp module provides conformance functionality using SimpleSAMLphp authentication processing filters feature.
 
 ## Features
+
 - 
 
 ## Installation
+
 Module requires SimpleSAMLphp version 2 or higher.
 
 Module is installable using Composer:
@@ -27,6 +30,7 @@ In config.php, search for the "module.enable" key and set 'conformance' to true:
 ```
 
 ## Configuration
+
 As usual with SimpleSAMLphp modules, copy the module template configuration to the SimpleSAMLphp config directory:
 
 ```shell
@@ -39,9 +43,10 @@ however, the description of the overall concept follows.
 ### PDO Metadata Storage Handler
 
 This module relies on PDO as being set as a metadata storage handler in SimpleSAMLphp. Please go through the following
-documentation to set it up: https://simplesamlphp.org/docs/stable/simplesamlphp-metadata-pdostoragehandler
+documentation to set it up: <https://simplesamlphp.org/docs/stable/simplesamlphp-metadata-pdostoragehandler>
 
 ## Adding Authentication Processing Filter
+
 Last step to start tracking user data using the configured tracker classes / jobs store is to add an [authentication
 processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc.html) from the conformance module
 to the right place in SimpleSAMLphp configuration. Here is an example of setting it globally for all IdPs 
@@ -57,8 +62,23 @@ in config/config.php:
 ```
 
 ## Tests
+
 To run phpcs, psalm and phpunit:
 
 ```shell
 composer pre-commit
 ```
+
+## Docker compose installation
+
+To easily run the conformance IdP, you can use docker compose:
+
+```shell
+cd docker
+docker compose up -d --build
+```
+
+This will start SimpleSAMLphp at `http://localhost/simplesaml/module.php/admin` with the conformance module installed,
+mariaDB database and nginx as a reverse proxy.
+
+You need to mount configuration and metadata folders, see `docker-compose.yml`, and add HTTPS (e.g. Let's encrypt).
