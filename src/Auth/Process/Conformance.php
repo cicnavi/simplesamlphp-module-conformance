@@ -6,6 +6,7 @@ namespace SimpleSAML\Module\conformance\Auth\Process;
 
 use Psr\SimpleCache\InvalidArgumentException;
 use SimpleSAML\Auth\ProcessingFilter;
+use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Cache;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\StateHelper;
@@ -22,6 +23,8 @@ class Conformance extends ProcessingFilter
     final public const KEY_STATE_ID = 'StateId';
     final public const KEY_SP_ENTITY_ID = 'spEntityId';
 
+    protected readonly Cache $cache;
+
     /**
      * Initialize this filter.
      * Validate configuration parameters.
@@ -32,12 +35,18 @@ class Conformance extends ProcessingFilter
     public function __construct(
         array $config,
         mixed $reserved,
-        protected readonly Cache $cache = new Cache(),
+        Cache $cache = null,
         protected readonly ResponderResolver $responderResolver = new ResponderResolver(),
         protected readonly StateHelper $stateHelper = new StateHelper(),
         protected readonly SspBridge $sspBridge = new SspBridge(),
+        Configuration $sspConfig = null,
+        protected readonly ModuleConfiguration $moduleConfiguration = new ModuleConfiguration(),
+
     ) {
         parent::__construct($config, $reserved);
+
+        $sspConfig ??= Configuration::getInstance();
+        $this->cache = $cache ?? new Cache($sspConfig, $moduleConfiguration);
     }
 
 
