@@ -11,6 +11,7 @@ use SimpleSAML\Module\conformance\Errors\InvalidConfigurationException;
 class ModuleConfiguration
 {
     final public const MODULE_NAME = 'conformance';
+    final public const KEY_DATADIR = 'datadir';
 
     /**
      * Default file name for module configuration. Can be overridden in constructor, for example, for testing purposes.
@@ -18,6 +19,7 @@ class ModuleConfiguration
     final public const FILE_NAME = 'module_conformance.php';
     final public const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
     final public const OPTION_CONFORMANCE_IDP_BASE_URL = 'conformance-idp-base-url';
+    final public const OPTION_CONFORMANCE_IDP_HOSTNAME = 'conformance-idp-host';
     final public const OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP = 'number-of-results-to-keep-per-sp';
     final public const OPTION_ADMINISTRATIVE_TOKENS = 'administrative-tokens';
     final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
@@ -85,6 +87,11 @@ class ModuleConfiguration
         return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_BASE_URL, null);
     }
 
+    public function getConformanceIdpHostname(): ?string
+    {
+        return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_HOSTNAME, null);
+    }
+
     public function getLocalTestRunnerToken(): string
     {
         return $this->getConfig()->getString(self::OPTION_LOCAL_TEST_RUNNER_TOKEN);
@@ -126,5 +133,10 @@ class ModuleConfiguration
         }
 
         return true;
+    }
+
+    public function getNumberOfResultsToKeepPerSp(): int
+    {
+        return $this->getConfig()->getIntegerRange(self::OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP, 1, 1000);
     }
 }

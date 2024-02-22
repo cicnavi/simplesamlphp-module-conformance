@@ -119,14 +119,13 @@ class NucleiTest
         }
 
         // TODO mivanci Export this path for usage in TestResults.
-        $nucleiDataDir = $this->sspConfig->getPathValue('datadir', sys_get_temp_dir()) . self::KEY_NUCLEI;
+        $nucleiDataDir = $this->sspConfig->getPathValue(ModuleConfiguration::KEY_DATADIR, sys_get_temp_dir())
+            . self::KEY_NUCLEI;
 
 
         $nucleiPublicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
-        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates/'
-//            . 'saml-test-headless.yaml'
-        ;
+        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
 
         $templateId = $request->get('templateId');
         if (! $templateId) {
@@ -147,7 +146,10 @@ class NucleiTest
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
-        $conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ?? $this->utils->http()->getBaseURL();
+        $conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
+            $this->utils->http()->getBaseURL();
+        $conformanceIdpHostname = $this->moduleConfiguration->getConformanceIdpHostname() ??
+            $this->utils->http()->getSelfHost();
         $filename = $this->filesystem->cleanFilename($spEntityId);
 
 
@@ -171,6 +173,7 @@ class NucleiTest
             $target,
             $acsUrl,
             $conformanceIdpBaseUrl,
+            $conformanceIdpHostname,
             $filename,
             $enableDebug,
             $enableVerbose,
@@ -182,13 +185,14 @@ class NucleiTest
             $enableMarkdownExport,
             $token,
         ): void {
-
             // TODO mivanci Generalizie this so it can be resolved for viewing.
-            $resultOutputDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
+            $spResultsDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
                 'results' . DIRECTORY_SEPARATOR .
-                hash('sha256', $spEntityId)  . DIRECTORY_SEPARATOR .
+                hash('sha256', $spEntityId);
+            $resultOutputDir =  $spResultsDir . DIRECTORY_SEPARATOR .
                 date('Y-m-d-H-i-s');
 
+            $numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
             // Nuclei expects that the export file exists.
             $outputExportFilename = "$resultOutputDir/findings.txt";
 
@@ -203,6 +207,7 @@ class NucleiTest
                 "-var SP_ENTITY_ID=$spEntityId " .
                 "-var CONSUMER_URL=$acsUrl " .
                 "-var CONFORMANCE_IDP_BASE_URL=$conformanceIdpBaseUrl " .
+                "-var CONFORMANCE_IDP_HOSTNAME=$conformanceIdpHostname " .
                 "-var RESULT_OUTPUT_DIR=$resultOutputDir " .
                 "-var FILENAME=$filename " .
                 "-var TOKEN=$token " .
@@ -214,7 +219,10 @@ class NucleiTest
                 ($enableDebug ? '-debug ' : '') .
                 ($enableVerbose ? '-verbose ' : '') .
                 "2>&1 " .
-                ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ");
+                "| sed 's/$token/hidden/g' " . // Remove token from output
+                ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ") .
+                "find $resultOutputDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
+                "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
             ;
 
             $descriptors = [
@@ -230,7 +238,8 @@ class NucleiTest
                 // Close unused pipes
                 fclose($pipes[0]);
 
-                echo $command;
+                // TODO mivanci Remove command print.
+                echo str_replace([$token], 'hidden', $command);
                 flush();
                 ob_flush();
 

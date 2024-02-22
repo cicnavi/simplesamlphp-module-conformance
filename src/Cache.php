@@ -7,6 +7,7 @@ namespace SimpleSAML\Module\conformance;
 use Cicnavi\SimpleFileCache\SimpleFileCache;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
+use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Errors\CacheException;
 use Throwable;
@@ -18,10 +19,16 @@ class Cache
     /**
      * @throws CacheException
      */
-    public function __construct(CacheInterface $cache = null)
-    {
+    public function __construct(
+        protected Configuration $sspConfig,
+        protected ModuleConfiguration $moduleConfiguration,
+        CacheInterface $cache = null,
+    ) {
         try {
-            $this->cache = $cache ?? new SimpleFileCache(ModuleConfiguration::MODULE_NAME . '-cache', );
+            $this->cache = $cache ?? new SimpleFileCache(
+                ModuleConfiguration::MODULE_NAME . '-cache',
+                $this->sspConfig->getPathValue(ModuleConfiguration::KEY_DATADIR, sys_get_temp_dir())
+            );
         } catch (Throwable $exception) {
             throw new CacheException('Error initializing cache instance: ' . $exception->getMessage());
         }

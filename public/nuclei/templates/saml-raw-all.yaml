@@ -1,18 +1,17 @@
-id: incubator-saml-test-raw-all
+id: saml-raw-all
 info:
   name: SAML signature validation
-  author: T&I Incubator, GÉANT
   severity: high
-  tags: saml
+  author: T&I Incubator, GÉANT
+  tags: saml,signature
 variables:
-  AUTHORIZATION: "Bearer abc123"
-  CONFORMANCE_IDP_HOSTNAME: conformance-idp.maiv1.incubator.geant.org
+  AUTHORIZATION: "Bearer {{TOKEN}}"
   TEST_CASES:
     - noSignature
     - invalidSignature
-  TEST_CASE: "standardResponse" # Start with this test.
 
 flow: |
+  set("TEST_CASE", "standardResponse");
   http();
   set("VALID_STATUS_CODE", template["http_status_code"]);
   set("VALID_BODY", template["http_body"]);

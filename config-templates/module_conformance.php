@@ -11,13 +11,6 @@ $config = [
     ModuleConfiguration::OPTION_DUMMY_PRIVATE_KEY => 'dummy.key',
 
     /**
-     * Optional base URL for Conformance IdP which will used when generating SSO service URLs.
-     * If not set, it will be resolved automatically based on the currently set host and/or SimpleSAMLphp configuration.
-     * Example: 'https://conformance-idp.maiv1.incubator.geant.org'
-     */
-    ModuleConfiguration::OPTION_CONFORMANCE_IDP_BASE_URL => null,
-
-    /**
      * Token which will be used when running tests locally, for example, from user interface.
      * This token has the same access level as SimpleSAMLphp administrator.
      * Must be set to strong random token string.

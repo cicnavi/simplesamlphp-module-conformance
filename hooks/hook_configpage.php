@@ -19,8 +19,8 @@ function conformance_hook_configpage(Template &$template): void
     }
 
     $template->data[$dataLinksKey][] = [
-        'href' => $moduleRoutesHelper->getUrl(Routes::PATH_METADATA_ADD),
-        'text' => Translate::noop('Conformance: Add SP metadata'),
+        'href' => $moduleRoutesHelper->getUrl(Routes::PATH_TEST_NUCLEI_SETUP),
+        'text' => Translate::noop('Conformance'),
     ];
 
     $template->getLocalization()->addModuleDomain(ModuleConfiguration::MODULE_NAME);
