@@ -164,3 +164,37 @@ button:disabled {
     cursor: not-allowed; /* Change cursor to indicate not allowed */
     opacity: 0.6; /* Optionally reduce opacity to visually indicate disabled state */
 }
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+.card-description {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.card-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #ddd;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.card-link:hover {
+    background-color: #eee;
+    color: #333;
+    padding: 8px 16px;
+}

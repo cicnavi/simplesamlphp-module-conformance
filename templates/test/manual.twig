@@ -1,23 +1,53 @@
-{% set pagetitle = 'Test setup'|trans %}
-{% extends "base.twig" %}
 
-{% block content %}
-  <h1>{{ pagetitle }}</h1>
+
+{% extends "@conformance/base.twig" %}
+
+{% block conformanceContent %}
 
   <p>
-    Choose test:
+    Choose the test you want to run for this authentication event.
   </p>
 
-  <ul>
-    <li>
-      <a href="{{ moduleURL('conformance/test/setup?testId=standardResponse&StateId=' ~ StateId) }}">{% trans %}Test 1 (valid signature){% endtrans %}</a>
-    </li>
-    <li>
-      <a href="{{ moduleURL('conformance/test/setup?testId=noSignature&StateId=' ~ StateId) }}">{% trans %}Test 2 (no signature){% endtrans %}</a>
-    </li>
-    <li>
-      <a href="{{ moduleURL('conformance/test/setup?testId=invalidSignature&StateId=' ~ StateId) }}">{% trans %}Test 3 (invalid signature){% endtrans %}</a>
-    </li>
-  </ul>
+  <div class="card">
+    <h3 class="card-title">Valid SAML signature (test 1)</h3>
+    <p class="card-description">
+      Create a SAML response with a valid IdP signature. The certificate in IdP metadata corresponds to the private
+      key used to create the signature, so it can be validated. SP should accept this SAML response without errors
+      (or at least without SAML signature related errors).
+    </p>
+    <a href="{{ moduleURL('conformance/test/setup?testId=standardResponse&StateId=' ~ StateId) }}"
+       class="card-link"
+    >
+      Select
+    </a>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">No SAML signature (test 2)</h3>
+    <p class="card-description">
+      Create a SAML response without signature. SP should discard this SAML response with error related to a missing
+      signature.
+    </p>
+    <a href="{{ moduleURL('conformance/test/setup?testId=noSignature&StateId=' ~ StateId) }}"
+       class="card-link"
+    >
+      Select
+    </a>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">Invalid SAML signature (test 3)</h3>
+    <p class="card-description">
+      Create a SAML response with an invalid IdP signature. The signature in SAML response will be present, however it
+      will be created with a different private key, meaning certificate in IdP metadata will not correspond to the
+      private key used to create the signature. SP should discard this SAML response with error related to invalid
+      signature.
+    </p>
+    <a href="{{ moduleURL('conformance/test/setup?testId=invalidSignature&StateId=' ~ StateId) }}"
+       class="card-link"
+    >
+      Select
+    </a>
+  </div>
 
 {% endblock%}
