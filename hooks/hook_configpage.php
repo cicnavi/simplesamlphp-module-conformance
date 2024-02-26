@@ -7,7 +7,11 @@ use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\XHTML\Template;
 
-/** @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection Reference is used by SimpleSAMLphp */
+/**
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection Reference is used by SimpleSAMLphp
+ * @noinspection PhpUnused
+ * @throws \SimpleSAML\Error\Exception
+ */
 function conformance_hook_configpage(Template &$template): void
 {
     $moduleRoutesHelper = new Routes();

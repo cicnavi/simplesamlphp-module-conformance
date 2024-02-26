@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance;
 
 use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\XHTML\Template;
 
@@ -84,6 +87,9 @@ class TemplateFactory
         );
     }
 
+    /**
+     * @throws ConformanceException
+     */
     public function generateFullHrefPath(string $path): string
     {
         return $this->routes->getUrl($path);
@@ -105,5 +111,10 @@ class TemplateFactory
     {
         $this->activeHrefPath = $activeHrefPath ? $this->generateFullHrefPath($activeHrefPath) : null;
         return $this;
+    }
+
+    public function getActiveHrefPath(): ?string
+    {
+        return $this->activeHrefPath;
     }
 }

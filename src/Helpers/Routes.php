@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SimpleSAML\Module\conformance\Helpers;
 
 use SimpleSAML\Error\CriticalConfigurationError;
-use SimpleSAML\Error\Exception;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Utils\HTTP;
 
@@ -27,7 +27,7 @@ class Routes
     }
 
     /**
-     * @throws Exception
+     * @throws ConformanceException
      */
     public function getUrl(
         string $path,
@@ -42,7 +42,7 @@ class Routes
             // SSP dumps some exception context data when simulating exception, so will ignore coverage for this...
         } catch (CriticalConfigurationError $exception) {
             $message = sprintf('Could not load SimpleSAMLphp base URL. Error was: %s', $exception->getMessage());
-            throw new Exception($message, $exception->getCode(), $exception);
+            throw new ConformanceException($message, $exception->getCode(), $exception);
             // @codeCoverageIgnoreEnd
         }
 

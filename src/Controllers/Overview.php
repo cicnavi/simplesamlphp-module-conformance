@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Controllers;
 
 use SimpleSAML\Configuration;
@@ -21,6 +23,5 @@ class Overview
 
 //    public function index(Request $request): Response
 //    {
-//
 //    }
 }

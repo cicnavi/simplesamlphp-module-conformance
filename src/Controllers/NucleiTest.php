@@ -3,20 +3,15 @@
 namespace SimpleSAML\Module\conformance\Controllers;
 
 use SimpleSAML\Configuration;
-use SimpleSAML\Error\Exception;
-use SimpleSAML\Locale\Translate;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
-use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module\conformance\Authorization;
-use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
+use SimpleSAML\Module\conformance\SspBridge;
 use SimpleSAML\Module\conformance\SspBridge\Utils;
 use SimpleSAML\Module\conformance\TemplateFactory;
-use SimpleSAML\Utils\HTTP;
-use SimpleSAML\XHTML\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,15 +19,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * TODO mivanci Full logging
+ * @psalm-suppress InternalMethod
  */
 class NucleiTest
 {
     protected const KEY_NUCLEI = 'nuclei';
-
-    protected const KEY_SET_SP_REMOTE = 'saml20-sp-remote';  // TODO mivanci Add to SspBridge class.
-
-    protected const KEY_AssertionConsumerService = 'AssertionConsumerService';
-    protected const KEY_Location = 'Location';
+    protected const KEY_ASSERTION_CONSUMER_SERVICE = 'AssertionConsumerService';
+    protected const KEY_LOCATION = 'Location';
     protected const KEY_ALL_TEMPLATES = 'all-templates';
     protected const KEY_TEMPLATE_EXTENSION = '.yaml';
 
@@ -52,11 +45,11 @@ class NucleiTest
         $this->metaDataStorageHandler = $metaDataStorageHandler ?? MetaDataStorageHandler::getMetadataHandler();
     }
 
-    public function setup(Request $request): Response
+    public function setup(): Response
     {
         $this->authorization->requireSimpleSAMLphpAdmin(true);
 
-        $serviceProviders = $this->metaDataStorageHandler->getList(self::KEY_SET_SP_REMOTE);
+        $serviceProviders = $this->metaDataStorageHandler->getList(SspBridge::KEY_SET_SP_REMOTE);
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/test/setup.twig',
@@ -70,7 +63,9 @@ class NucleiTest
     // TODO mivanci control how many times can this be ran at the same time.
     public function run(Request $request): Response
     {
+        /** @psalm-suppress MixedAssignment */
         $testId = $request->get('testTypeId');
+        $testId = empty($testId) ? null : (string)$testId;
 
         if ($testId && !$this->responderResolver->fromTestId($testId)) {
             return new StreamedResponse(function () {
@@ -78,8 +73,11 @@ class NucleiTest
             });
         }
 
+        /** @psalm-suppress MixedAssignment */
         $spEntityId = $request->get('serviceProviderEntityId');
-        if (!$spEntityId) {
+        $spEntityId = empty($spEntityId) ? null : (string)$spEntityId;
+
+        if (empty($spEntityId)) {
             return new StreamedResponse(function () {
                 echo 'Invalid SP selected.';
             });
@@ -88,7 +86,7 @@ class NucleiTest
         $this->authorization->requireServiceProviderToken($request, $spEntityId);
 
         try {
-            $spMetadata = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, self::KEY_SET_SP_REMOTE);
+            $spMetadata = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, SspBridge::KEY_SET_SP_REMOTE);
         } catch (\Throwable $exception) {
             return new StreamedResponse(function () {
                 echo 'No metadata for provided SP.';
@@ -96,8 +94,9 @@ class NucleiTest
         }
 
         try {
+            /** @psalm-suppress MixedAssignment */
             $acsUrl = $request->get('assertionConsumerServiceUrl') ??
-                $spMetadata->getDefaultEndpoint(self::KEY_AssertionConsumerService);
+                $spMetadata->getDefaultEndpoint(self::KEY_ASSERTION_CONSUMER_SERVICE);
         } catch (\Throwable $exception) {
             return new StreamedResponse(function () {
                 echo "Could not resolve Assertion Consumer Service (ACS).";
@@ -105,7 +104,7 @@ class NucleiTest
         }
 
         if (is_array($acsUrl)) {
-            $acsUrl = (string)$acsUrl[self::KEY_Location] ?? '';
+            $acsUrl = (string)($acsUrl[self::KEY_LOCATION] ?? '');
         } else {
             $acsUrl = (string) $acsUrl;
         }
@@ -119,7 +118,7 @@ class NucleiTest
         }
 
         // TODO mivanci Export this path for usage in TestResults.
-        $nucleiDataDir = $this->sspConfig->getPathValue(ModuleConfiguration::KEY_DATADIR, sys_get_temp_dir())
+        $nucleiDataDir = ($this->sspConfig->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir())
             . self::KEY_NUCLEI;
 
 
@@ -127,8 +126,11 @@ class NucleiTest
             DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
         $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
 
+        /** @psalm-suppress MixedAssignment */
         $templateId = $request->get('templateId');
-        if (! $templateId) {
+        $templateId = empty($templateId) ? null : (string)$templateId;
+
+        if (empty($templateId)) {
             return new StreamedResponse(function () {
                 echo 'No template ID provided.';
             });
@@ -167,7 +169,6 @@ class NucleiTest
         return new StreamedResponse(function () use (
             $nucleiDataDir,
             $nucleiTemplatesDir,
-            $request,
             $testId,
             $spEntityId,
             $target,
@@ -222,6 +223,7 @@ class NucleiTest
                 "| sed 's/$token/hidden/g' " . // Remove token from output
                 ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ") .
                 "find $resultOutputDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
+                // phpcs:ignore
                 "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
             ;
 
@@ -252,6 +254,7 @@ class NucleiTest
                     // Replace common color codes.
                     $output = $this->replaceColorCodes($output);
                     // Get rid of other special chars
+                    // phpcs:ignore
                     //$output = filter_var($output, FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
                     // Get newlines back
                     //$output = str_replace("--newlinetoken--", "\n", $output);
@@ -329,17 +332,20 @@ class NucleiTest
      */
     public function fetchAcss(Request $request): JsonResponse
     {
-        $spEntityId = $request->get('spEntityId') ?? null;
+        /** @psalm-suppress MixedAssignment */
+        $spEntityId = $request->get('spEntityId');
+        $spEntityId = empty($spEntityId) ? null : (string)$spEntityId;
 
-        if (!$spEntityId) {
+        if (is_null($spEntityId)) {
             return new JsonResponse([]);
         }
 
         try {
-            $spMetadataConfig = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, self::KEY_SET_SP_REMOTE);
-            $acsArr = $spMetadataConfig->getEndpoints(self::KEY_AssertionConsumerService);
+            $spMetadataConfig = $this->metaDataStorageHandler
+                ->getMetaDataConfig($spEntityId, SspBridge::KEY_SET_SP_REMOTE);
+            $acsArr = $spMetadataConfig->getEndpoints(self::KEY_ASSERTION_CONSUMER_SERVICE);
 
-            return new JsonResponse(array_unique(array_column($acsArr, self::KEY_Location)));
+            return new JsonResponse(array_unique(array_column($acsArr, self::KEY_LOCATION)));
         } catch (\Throwable $exception) {
             // Log
         }

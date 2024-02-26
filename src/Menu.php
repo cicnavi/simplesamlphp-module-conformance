@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance;
 
 use SimpleSAML\Module\conformance\Menu\Item;

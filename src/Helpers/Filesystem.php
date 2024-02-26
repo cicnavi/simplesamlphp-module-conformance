@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Helpers;
 
 class Filesystem
 {
-    function cleanFilename(string $filename): string
+    public function cleanFilename(string $filename): string
     {
         // Remove any characters that are not allowed in filenames
         $filename = preg_replace('/[^\w\s\d\-_~,;\[\]\(\).]/', '', $filename);

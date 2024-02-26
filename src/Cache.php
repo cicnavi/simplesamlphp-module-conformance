@@ -12,6 +12,9 @@ use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Errors\CacheException;
 use Throwable;
 
+/**
+ * @psalm-suppress InvalidCatch
+ */
 class Cache
 {
     protected CacheInterface $cache;
@@ -21,7 +24,6 @@ class Cache
      */
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfiguration $moduleConfiguration,
         CacheInterface $cache = null,
     ) {
         try {
@@ -41,7 +43,9 @@ class Cache
     {
         $cacheKeyTestId = $this->getTestIdCacheKey($spEntityId);
         try {
+            /** @psalm-suppress MixedAssignment */
             $testId = $this->cache->get($cacheKeyTestId);
+            $testId = empty($testId) ? null : (string)$testId;
         } catch (Throwable | InvalidArgumentException $exception) {
             throw new CacheException(
                 'Error getting ' . $cacheKeyTestId . ' from cache: ' . $exception->getMessage()
@@ -60,7 +64,7 @@ class Cache
             );
         }
 
-        return (string)$testId;
+        return $testId;
     }
 
     /**

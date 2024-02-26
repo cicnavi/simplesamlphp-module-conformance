@@ -7,9 +7,11 @@ namespace SimpleSAML\Test\Module\conformance;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\SimpleCache\CacheInterface;
+use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Cache;
 use PHPUnit\Framework\TestCase;
 use SimpleSAML\Module\conformance\Errors\CacheException;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 
 /**
  * @covers \SimpleSAML\Module\conformance\Cache
@@ -17,12 +19,14 @@ use SimpleSAML\Module\conformance\Errors\CacheException;
 class CacheTest extends TestCase
 {
     protected MockObject $cacheInterfaceMock;
+    protected MockObject $sspConfigMOck;
 
     /**
      * @throws Exception
      */
     protected function setUp(): void
     {
+        $this->sspConfigMOck = $this->createMock(Configuration::class);
         $this->cacheInterfaceMock = $this->createMock(CacheInterface::class);
     }
 
@@ -31,7 +35,7 @@ class CacheTest extends TestCase
      */
     protected function mocked(): Cache
     {
-        return new Cache($this->cacheInterfaceMock);
+        return new Cache($this->sspConfigMOck, $this->cacheInterfaceMock);
     }
     public function testCanInitialize(): void
     {

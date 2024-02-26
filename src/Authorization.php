@@ -1,14 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance;
 
-use SimpleSAML\Configuration;
+use SimpleSAML\Error\Exception;
 use SimpleSAML\Locale\Translate;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\SspBridge\Utils;
 use Symfony\Component\HttpFoundation\Request;
 use Throwable;
 
+/**
+ * @psalm-suppress InternalMethod
+ */
 class Authorization
 {
     public const KEY_TOKEN = 'token';
@@ -17,7 +22,6 @@ class Authorization
     public const KEY_SP_ENTITY_ID = 'serviceProviderEntityId';
 
     public function __construct(
-        protected Configuration $sspConfig,
         protected ModuleConfiguration $moduleConfiguration,
         protected Utils $utils,
     ) {
@@ -29,7 +33,15 @@ class Authorization
     public function requireSimpleSAMLphpAdmin(bool $forceAdminAuthentication = false): void
     {
         if ($forceAdminAuthentication) {
-            $this->utils->auth()->requireAdmin();
+            try {
+                $this->utils->auth()->requireAdmin();
+            } catch (Exception $exception) {
+                throw new AuthorizationException(
+                    Translate::noop('Unable to initiate admin authentication.'),
+                    $exception->getCode(),
+                    $exception
+                );
+            }
         }
 
         if (! $this->utils->auth()->isAdmin()) {
@@ -94,7 +106,10 @@ class Authorization
         } catch (Throwable) {
             // Not administrative token, check for service provider token.
         }
-        if (empty($spEntityId ??= $this->findSpEntityId($request))) {
+
+        $spEntityId ??= $this->findSpEntityId($request);
+
+        if (empty($spEntityId)) {
             throw new AuthorizationException(Translate::noop('Service provider entity ID not provided.'));
         }
 
@@ -118,7 +133,7 @@ class Authorization
                 (string) preg_replace(
                     '/^\s*Bearer\s/',
                     '',
-                    $request->headers->get(self::KEY_AUTHORIZATION)
+                    (string)$request->headers->get(self::KEY_AUTHORIZATION)
                 )
             );
         }
