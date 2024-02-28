@@ -19,7 +19,7 @@ class Authorization
     public const KEY_TOKEN = 'token';
     public const KEY_AUTHORIZATION = 'Authorization';
 
-    public const KEY_SP_ENTITY_ID = 'serviceProviderEntityId';
+    public const KEY_SP_ENTITY_ID = 'spEntityId';
 
     public function __construct(
         protected ModuleConfiguration $moduleConfiguration,

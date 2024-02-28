@@ -45,19 +45,19 @@ class NucleiResults
         $serviceProviders = $this->metaDataStorageHandler->getList(SspBridge::KEY_SET_SP_REMOTE);
 
         /** @psalm-suppress InternalMethod */
-        $selectedServiceProviderEntityId = (string) $request->get('serviceProviderEntityId');
+        $selectedSpEntityId = (string) $request->get('spEntityId');
 
-        if ($selectedServiceProviderEntityId) {
+        if ($selectedSpEntityId) {
             // Authorization for specific SP.
-            $this->authorization->requireServiceProviderToken($request, $selectedServiceProviderEntityId);
+            $this->authorization->requireServiceProviderToken($request, $selectedSpEntityId);
         } else {
             $this->authorization->requireAdministrativeToken($request);
         }
 
         $results = [];
         if (
-            $selectedServiceProviderEntityId &&
-            file_exists($resultsDir = $this->resolveResultsDir($selectedServiceProviderEntityId))
+            $selectedSpEntityId &&
+            file_exists($resultsDir = $this->resolveResultsDir($selectedSpEntityId))
         ) {
             // Create a RecursiveDirectoryIterator instance
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($resultsDir));
@@ -79,7 +79,7 @@ class NucleiResults
             Routes::PATH_TEST_RESULTS,
         );
         $template->data['serviceProviders'] = $serviceProviders;
-        $template->data['selectedServiceProviderEntityId'] = $selectedServiceProviderEntityId;
+        $template->data['selectedSpEntityId'] = $selectedSpEntityId;
         $template->data['results'] = $results;
 
         return $template;
@@ -90,13 +90,13 @@ class NucleiResults
      */
     public function download(Request $request): Response
     {
-        $serviceProviderEntityId = (string) $request->get('serviceProviderEntityId');
+        $spEntityId = (string) $request->get('spEntityId');
 
-        $this->authorization->requireServiceProviderToken($request, $serviceProviderEntityId);
+        $this->authorization->requireServiceProviderToken($request, $spEntityId);
 
 
         $result = (string) $request->get('result');
-        $filePath = $this->resolveResultsDir($serviceProviderEntityId) . $result;
+        $filePath = $this->resolveResultsDir($spEntityId) . $result;
 
         if (! file_exists($filePath)) {
             return new Response(null, 404);
@@ -108,9 +108,9 @@ class NucleiResults
     }
 
     // TODO mivanci move to common resolver used in NucleiTest
-    protected function resolveResultsDir(string $selectedServiceProviderEntityId): string
+    protected function resolveResultsDir(string $selectedSpEntityId): string
     {
-        $spIdentifier = hash('sha256', $selectedServiceProviderEntityId);
+        $spIdentifier = hash('sha256', $selectedSpEntityId);
         $nucleiDataDir = ($this->sspConfig->getPathValue('datadir') ?? sys_get_temp_dir()) . self::KEY_NUCLEI;
 
         return $nucleiDataDir . DIRECTORY_SEPARATOR .

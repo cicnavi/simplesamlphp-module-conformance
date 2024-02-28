@@ -11,11 +11,11 @@
   <div class="form-container">
     <form id="resultsForm" method="get" action="results">
       <div class="form-group">
-        <label for="serviceProviderEntityId">Service Provider (SP)</label>
-        <select id="serviceProviderEntityId" name="serviceProviderEntityId">
+        <label for="spEntityId">Service Provider (SP)</label>
+        <select id="spEntityId" name="spEntityId">
           <option value=""></option>
           {% for entityId, serviceProvider in serviceProviders %}
-            <option value="{{ entityId }}" {{ entityId == selectedServiceProviderEntityId ? 'selected' : '' }}>
+            <option value="{{ entityId }}" {{ entityId == selectedSpEntityId ? 'selected' : '' }}>
               {{ entityId }}
             </option>
           {% endfor %}
@@ -25,11 +25,11 @@
   </div>
 
   <div class="results-container">
-    {% if results and selectedServiceProviderEntityId %}
+    {% if results and selectedSpEntityId %}
       <ul>
       {% for result in results %}
         <li>
-          * <a href="results/download?serviceProviderEntityId={{ selectedServiceProviderEntityId|url_encode }}&result={{ result|url_encode }}">
+          * <a href="results/download?spEntityId={{ selectedSpEntityId|url_encode }}&result={{ result|url_encode }}">
             {{ result }}
           </a>
         </li>

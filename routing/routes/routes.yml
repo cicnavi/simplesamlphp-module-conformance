@@ -1,7 +1,7 @@
 
-conformance-manual-test-setup:
+conformance-test-setup:
   path: /test/setup
-  controller: SimpleSAML\Module\conformance\Controllers\ManualTest::setup
+  controller: SimpleSAML\Module\conformance\Controllers\TestSetup::setup
 
 conformance-metadata-add:
   path: /metadata/add
@@ -21,6 +21,12 @@ conformance-nuclei-test-setup:
   methods:
     - GET
 
+conformance-nuclei-test-setup2:
+  path: /nuclei/test/setup2
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest2::setup
+  methods:
+    - GET
+    -
 conformance-nuclei-test-fetch-acss:
   path: /nuclei/test/fetch-acss
   controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::fetchAcss
@@ -34,6 +40,13 @@ conformance-nuclei-test-run:
     - POST
     - GET
 
+conformance-nuclei-test-run2:
+  path: /nuclei/test/run2
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest2::run
+  methods:
+    - POST
+    - GET
+    -
 conformance-nuclei-results-index:
   path: /nuclei/results
   controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::index

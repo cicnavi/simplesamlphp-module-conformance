@@ -12,8 +12,9 @@
   <div class="form-container">
     <form method="post">
       <div class="form-group">
-        <label for="serviceProviderEntityId">Service Provider (SP)</label>
-        <select id="serviceProviderEntityId">
+        <label for="spEntityId">Service Provider (SP)</label>
+        <select id="spEntityId">
+          <option value="" selected></option>
           {% for entityId, serviceProvider in serviceProviders %}
             <option value="{{ entityId }}">{{ entityId }}</option>
           {% endfor %}
@@ -21,8 +22,8 @@
       </div>
 
       <div class="form-group">
-        <label for="assertionConsumerServiceUrl">Assertion Consumer Service (ACS, optional)</label>
-        <select id="assertionConsumerServiceUrl">
+        <label for="acsUrl">Assertion Consumer Service (ACS, optional)</label>
+        <select id="acsUrl">
           <option value="" selected></option>
         </select>
         <span class="help">
@@ -34,21 +35,21 @@
       {# TODO mivanci generate from a list of available templates. #}
       <div class="form-group">
         <label for="templateId">Template</label>
-        <select id="templateId" name="Test type">
-          <option value="all-templates" selected>All templates</option>
-          <option value="saml-headless-all">SAML test template using headless browser</option>
-          <option value="saml-raw-all">SAML test template using raw HTTP</option>
+        <select id="templateId">
+          <option value="saml-raw-all">SAML template using raw HTTP</option>
+          <option value="saml-headless-all" selected>SAML template using headless browser (experimental)</option>
+          <option value="all-templates">All templates</option>
         </select>
       </div>
 
       <div class="form-group">
         <label for="enableDebug">
-          <input type="checkbox" id="enableDebug">
+          <input type="checkbox" id="enableDebug" checked>
           Show requests and responses?
         </label>
 
         <label for="enableVerbose">
-          <input type="checkbox" id="enableVerbose">
+          <input type="checkbox" id="enableVerbose" checked>
           Show verbose output?
         </label>
 
@@ -61,7 +62,7 @@
         </label>
 
         <label for="enableFindingsExport">
-          <input type="checkbox" id="enableFindingsExport">
+          <input type="checkbox" id="enableFindingsExport" checked>
           Export findings to a file?
           <span class="help">
             Choose if you want to export specific lines corresponding to matched rules (findings) from Nuclei to a file.
@@ -69,7 +70,7 @@
         </label>
 
         <label for="enableJsonExport">
-          <input type="checkbox" id="enableJsonExport">
+          <input type="checkbox" id="enableJsonExport" checked>
           Export results in JSON format?
           <span class="help">
             Recommended.

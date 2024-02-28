@@ -1,10 +1,10 @@
 
 (function() {
     const resultsFormElement = document.getElementById('resultsForm');
-    const serviceProviderEntityIdSelect = document.getElementById('serviceProviderEntityId');
+    const spEntityIdSelect = document.getElementById('spEntityId');
 
-    serviceProviderEntityIdSelect.addEventListener('change', function () {
-        if (serviceProviderEntityIdSelect.value) {
+    spEntityIdSelect.addEventListener('change', function () {
+        if (spEntityIdSelect.value) {
             resultsFormElement.submit();
         }
     });

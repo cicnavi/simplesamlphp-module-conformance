@@ -3,7 +3,8 @@
     window.conformance = {};
     window.conformance.nuclei = {};
 
-    const serviceProviderEntityIdSelect = document.getElementById('serviceProviderEntityId');
+    const spEntityIdSelect = document.getElementById('spEntityId');
+    const acsUrlSelect = document.getElementById('acsUrl');
 
     /**
      * Populate available ACSs for specific SP Entity ID.
@@ -11,19 +12,18 @@
     window.conformance.nuclei.fetchAcss = function () {
 
         // Clear all existing options
-        const assertionConsumerServiceIdSelect = document.getElementById('assertionConsumerServiceUrl');
-        assertionConsumerServiceIdSelect.disabled = true;
-        assertionConsumerServiceIdSelect.innerHTML = '';
+        acsUrlSelect.disabled = true;
+        acsUrlSelect.innerHTML = '';
 
         // Create a new default option
         const defaultOption = document.createElement('option');
         defaultOption.text = '';
         defaultOption.value = '';
         defaultOption.selected = true; // This makes it the default selected option
-        assertionConsumerServiceIdSelect.add(defaultOption);
+        acsUrlSelect.add(defaultOption);
 
         // Define the query parameter
-        const spEntityId = serviceProviderEntityIdSelect.value;
+        const spEntityId = spEntityIdSelect.value;
 
         if (! spEntityId) {
             return;
@@ -49,7 +49,7 @@
                     const option = document.createElement('option');
                     option.text = optionText;
                     option.value = optionText; // You can set value according to your need
-                    assertionConsumerServiceIdSelect.add(option);
+                    acsUrlSelect.add(option);
                 });
             })
             .catch(error => {
@@ -57,7 +57,7 @@
                 console.error('Error fetching ACSs:', error);
             })
             .finally(() => {
-                assertionConsumerServiceIdSelect.disabled = false;
+                acsUrlSelect.disabled = false;
             });
     };
 
@@ -70,7 +70,7 @@
         testRunButton.disabled = true;
 
         const outputElement = document.getElementById('cmd-output');
-        outputElement.innerHTML = 'Waiting...';
+        outputElement.innerHTML = 'Request sent, waiting for output...';
 
         const templateInputElement = document.getElementById('templateId');
         const enableDebugElement = document.getElementById('enableDebug');
@@ -84,7 +84,7 @@
 
         const formData = new URLSearchParams();
         formData.append('templateId', templateInputElement.value);
-        formData.append('serviceProviderEntityId', serviceProviderEntityIdSelect.value);
+        formData.append('spEntityId', spEntityIdSelect.value);
         formData.append('enableDebug', enableDebugElement.checked ? '1' : '0');
         formData.append('enableVerbose', enableVerboseElement.checked ? '1' : '0');
         formData.append('enableOutputExport', enableOutputExportElement.checked ? '1' : '0');
@@ -93,6 +93,10 @@
         formData.append('enableJsonLExport', enableJsonLExportElement.checked ? '1' : '0');
         formData.append('enableSarifExport', enableSarifExportElement.checked ? '1' : '0');
         formData.append('enableMarkdownExport', enableMarkdownExportElement.checked ? '1' : '0');
+
+        if (acsUrlSelect.value) {
+            formData.append('acsUrl', acsUrlSelect.value);
+        }
 
         fetch('run', {
             method: 'POST',
@@ -150,7 +154,7 @@
 
     // Add common event listeners.
     testRunButton.addEventListener('click', window.conformance.nuclei.runTest);
-    serviceProviderEntityIdSelect.addEventListener('change', window.conformance.nuclei.fetchAcss);
+    spEntityIdSelect.addEventListener('change', window.conformance.nuclei.fetchAcss);
 
     // Fetch ACS for currently selected SP right away.
     window.conformance.nuclei.fetchAcss();

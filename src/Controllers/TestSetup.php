@@ -23,7 +23,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ManualTest
+class TestSetup
 {
     public function __construct(
         protected Configuration $sspConfig,
@@ -88,7 +88,7 @@ class ManualTest
         }
 
         // We need to show a page to a user
-        $template = new Template($this->sspConfig, ModuleConfiguration::MODULE_NAME . ':test/manual.twig');
+        $template = new Template($this->sspConfig, ModuleConfiguration::MODULE_NAME . ':test/setup.twig');
         $template->data[Conformance::KEY_SP_ENTITY_ID] = $spEntityId;
         $template->data[Conformance::KEY_STATE_ID] = $stateId;
         return $template;
