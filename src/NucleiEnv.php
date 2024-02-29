@@ -44,7 +44,6 @@ class NucleiEnv
         protected ModuleConfiguration $moduleConfiguration,
         protected Helpers $helpers,
         protected SspBridge $sspBridge,
-        protected LoggerInterface $logger,
     ) {
         $this->dataDir = (
             $this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir()
@@ -59,21 +58,23 @@ class NucleiEnv
         $this->numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
     }
 
+    /**
+     * phpcs:disable
+     */
     public function prepareCommand(
         string $spEntityId,
         string $target,
         string $ascUrl,
         string $token,
         string $testId = null,
-    ): string
-    {
+    ): string {
+        $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
+
         $spEntityId = escapeshellarg($spEntityId);
         $target = escapeshellarg($target);
         $acsUrl = escapeshellarg($ascUrl);
         $token = escapeshellarg($token);
         $testId = empty($testId) ? null : escapeshellarg($testId);
-
-        $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
 
         return
             "mkdir -p $spTestResultsDir; " .
@@ -88,16 +89,16 @@ class NucleiEnv
             "-var FILENAME={$this->helpers->filesystem()->cleanFilename($spEntityId)} " .
             "-var TOKEN=$token " .
             ($testId ? "-var TEST_ID=$testId " : '') .
-            ($this->enableFindingsExport ? "-output $spTestResultsDir/findings.txt " : '') .
-            ($this->enableJsonExport ? "-json-export $spTestResultsDir/json-output.json " : '') .
-            ($this->enableJsonLExport ? "-jsonl-export $spTestResultsDir/jsonl-output.json " : '') .
-            ($this->enableSarifExport ? "-sarif-export $spTestResultsDir/sarif-output.json " : '') .
-            ($this->enableMarkdownExport ? "-markdown-export $spTestResultsDir/markdown " : '') .
+            ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
+            ($this->enableJsonExport ? "-json-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_JSON_EXPORT)} " : '') .
+            ($this->enableJsonLExport ? "-jsonl-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_JSONL_EXPORT)} " : '') .
+            ($this->enableSarifExport ? "-sarif-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_SARIF_EXPORT)} " : '') .
+            ($this->enableMarkdownExport ? "-markdown-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::DIR_MARKDOWN_EXPORT)} " : '') .
             ($this->enableDebug ? '-debug ' : '') .
             ($this->enableVerbose ? '-verbose ' : '') .
             "2>&1 " .
             "| sed 's/$token/hidden/g' " . // Remove token from output
-            ($this->enableOutputExport ?  "| tee $spTestResultsDir/output.txt; " : "; ") .
+            ($this->enableOutputExport ?  "| tee {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_OUTPUT_EXPORT)}; " : "; ") .
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
             "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
@@ -109,20 +110,21 @@ class NucleiEnv
         return $this->dataDir . DIRECTORY_SEPARATOR . 'results' . DIRECTORY_SEPARATOR . hash('sha256', $spEntityId);
     }
 
-    public function getSpTestResultsDir(string $spEntityId, string $datetime = null): string
+    /**
+     * @param string $spEntityId
+     * @param string|null $testInstanceIdentifier Identifier for single test run. If not provided, current time is used.
+     * @return string
+     */
+    public function getSpTestResultsDir(string $spEntityId, string $testInstanceIdentifier = null): string
     {
-        return $this->getSpResultsDir($spEntityId) . DIRECTORY_SEPARATOR . date(self::DATE_FORMAT);
-    }
-
-    public function test()
-    {
-
+        return $this->getSpResultsDir($spEntityId) . DIRECTORY_SEPARATOR .
+            ($testInstanceIdentifier ?? date(self::DATE_FORMAT));
     }
 
     /**
      * @throws ConformanceException
      */
-    public function setTemplateId(?string $templateId): NucleiEnv
+    public function setTemplateId(string $templateId): NucleiEnv
     {
         if (
             file_exists($this->templatesDir . DIRECTORY_SEPARATOR . $templateId . self::KEY_TEMPLATE_EXTENSION)
@@ -136,6 +138,7 @@ class NucleiEnv
 
     public function getTemplatesPath(): string
     {
-        return $this->templatesDir . DIRECTORY_SEPARATOR . ($this->templateId ?? '');
+        return $this->templatesDir . DIRECTORY_SEPARATOR .
+            ($this->templateId ? $this->templateId . self::KEY_TEMPLATE_EXTENSION : '');
     }
 }

@@ -9,6 +9,7 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -42,7 +43,7 @@ class NucleiTest
         protected TemplateFactory $templateFactory,
         protected Authorization $authorization,
         protected MetaDataStorageHandler $metaDataStorageHandler,
-        protected NucleiEnv $nucleiRunner,
+        protected NucleiEnv $nucleiEnv,
         protected LoggerInterface $logger,
     ) {
     }
@@ -118,126 +119,53 @@ class NucleiTest
             });
         }
 
-        // TODO mivanci Export this path for usage in TestResults.
-        $nucleiDataDir = ($this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir())
-            . self::KEY_NUCLEI;
-
-
-        $nucleiPublicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
-            DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
-        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
-
         /** @psalm-suppress MixedAssignment */
         $templateId = $request->get('templateId');
         $templateId = empty($templateId) ? null : (string)$templateId;
 
-        if (empty($templateId)) {
-            return new StreamedResponse(function () {
-                echo 'No template ID provided.';
-            });
-        }
-
-        if ($templateId !== self::KEY_ALL_TEMPLATES) {
-            $nucleiTemplatesDir .= $templateId . self::KEY_TEMPLATE_EXTENSION;
-        }
-
-        if (!file_exists($nucleiTemplatesDir)) {
-            return new StreamedResponse(function () use ($nucleiTemplatesDir) {
-                echo "Template not valid ($nucleiTemplatesDir).";
-            });
+        if (!empty($templateId)) {
+            try {
+                $this->nucleiEnv->setTemplateId($templateId);
+            } catch (ConformanceException $exception) {
+                return new StreamedResponse(function () use ($templateId, $exception) {
+                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
+                });
+            }
         }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
-        $conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
-            $this->sspBridge->utils()->http()->getBaseURL();
-        $conformanceIdpHostname = $this->moduleConfiguration->getConformanceIdpHostname() ??
-            $this->sspBridge->utils()->http()->getSelfHost();
-        $filename = $this->helpers->filesystem()->cleanFilename($spEntityId);
-
-
-        $enableDebug = (bool) $request->get('enableDebug');
-        $enableVerbose = (bool) $request->get('enableVerbose');
-        $enableOutputExport = (bool) $request->get('enableOutputExport');
-        $enableFindingsExport = (bool) $request->get('enableFindingsExport');
-        $enableJsonExport = (bool) $request->get('enableJsonExport');
-        $enableJsonLExport = (bool) $request->get('enableJsonLExport');
-        $enableSarifExport = (bool) $request->get('enableSarifExport');
-        $enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+        $this->nucleiEnv->enableDebug = (bool) $request->get('enableDebug');
+        $this->nucleiEnv->enableVerbose = (bool) $request->get('enableVerbose');
+        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
+        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
+        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
+        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
+        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
+        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
 
         $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
-        return new StreamedResponse(function () use (
-            $nucleiDataDir,
-            $nucleiTemplatesDir,
-            $testId,
-            $spEntityId,
-            $target,
-            $acsUrl,
-            $conformanceIdpBaseUrl,
-            $conformanceIdpHostname,
-            $filename,
-            $enableDebug,
-            $enableVerbose,
-            $enableOutputExport,
-            $enableFindingsExport,
-            $enableJsonExport,
-            $enableJsonLExport,
-            $enableSarifExport,
-            $enableMarkdownExport,
-            $token,
-        ): void {
-            // TODO mivanci Generalizie this so it can be resolved for viewing.
-            $spResultsDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
-                'results' . DIRECTORY_SEPARATOR .
-                hash('sha256', $spEntityId);
-            $resultOutputDir =  $spResultsDir . DIRECTORY_SEPARATOR .
-                date('Y-m-d-H-i-s');
+        $command = $this->nucleiEnv->prepareCommand($spEntityId, $target, $acsUrl, $token, $testId);
 
-            $numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
-            // Nuclei expects that the export file exists.
-            $outputExportFilename = "$resultOutputDir/findings.txt";
+        return new StreamedResponse(
+            function () use ($command, $token): void {
+                $descriptors = [
+                    0 => ['pipe', 'r'],  // stdin
+                    1 => ['pipe', 'w'],  // stdout
+                    2 => ['pipe', 'w']   // stderr
+                ];
 
-            // TODO mivanci Move to separate service (Nuclei Shell Runner)
-            // TODO mivanci escapeshellarg every argument
-            $command =
-                "mkdir -p $resultOutputDir; " .
-                "nuclei -target $target " .
-                "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
-                "-templates $nucleiTemplatesDir " .
-                "-var TEST_ID=$testId " .
-                "-var SP_ENTITY_ID=$spEntityId " .
-                "-var CONSUMER_URL=$acsUrl " .
-                "-var CONFORMANCE_IDP_BASE_URL=$conformanceIdpBaseUrl " .
-                "-var CONFORMANCE_IDP_HOSTNAME=$conformanceIdpHostname " .
-                "-var RESULT_OUTPUT_DIR=$resultOutputDir " .
-                "-var FILENAME=$filename " .
-                "-var TOKEN=$token " .
-                ($enableFindingsExport ? "-output $outputExportFilename " : '') .
-                ($enableJsonExport ? "-json-export $resultOutputDir/json-output.json " : '') .
-                ($enableJsonLExport ? "-jsonl-export $resultOutputDir/jsonl-output.json " : '') .
-                ($enableSarifExport ? "-sarif-export $resultOutputDir/sarif-output.json " : '') .
-                ($enableMarkdownExport ? "-markdown-export $resultOutputDir/markdown " : '') .
-                ($enableDebug ? '-debug ' : '') .
-                ($enableVerbose ? '-verbose ' : '') .
-                "2>&1 " .
-                "| sed 's/$token/hidden/g' " . // Remove token from output
-                ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ") .
-                "find $resultOutputDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
-                // phpcs:ignore
-                "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
-            ;
+                $process = proc_open($command, $descriptors, $pipes, $this->nucleiEnv->dataDir);
 
-            $descriptors = [
-                0 => ['pipe', 'r'],  // stdin
-                1 => ['pipe', 'w'],  // stdout
-                2 => ['pipe', 'w']   // stderr
-            ];
+                // Check if the process was successfully started
+                if (!is_resource($process)) {
+                    echo "Unable to open process needed to run the command.";
+                    flush();
+                    ob_flush();
+                    return;
+                }
 
-            $process = proc_open($command, $descriptors, $pipes, $nucleiDataDir);
-
-            // Check if the process was successfully started
-            if (is_resource($process)) {
                 // Close unused pipes
                 fclose($pipes[0]);
 
@@ -245,7 +173,6 @@ class NucleiTest
                 echo str_replace([$token], 'hidden', $command);
                 flush();
                 ob_flush();
-
                 // Read the output stream and send it to the browser in chunks
                 while (!feof($pipes[1])) {
                     // Read chunk, adjust size as needed
@@ -272,19 +199,18 @@ class NucleiTest
                 fclose($pipes[1]);
                 fclose($pipes[2]);
 
-//                $procStatus = proc_get_status($process);
-
-//                echo "Process status: " . var_export($procStatus, true);
+            //                $procStatus = proc_get_status($process);
+            //                echo "Process status: " . var_export($procStatus, true);
 
                 $exitCode = proc_close($process);
 
                 echo "Exit code: $exitCode \n";
                 flush();
                 ob_flush();
-            }
-        },
+            },
             200,
-            $headers);
+            $headers
+        );
     }
 
     /**
@@ -293,7 +219,7 @@ class NucleiTest
     protected function replaceColorCodes(string $output): string
     {
         //return $output;
-        $colorCodes = array(
+        $colorCodes = [
             '/\e\[(30|0;30)m/' => '<span class="black-text">',
             '/\e\[(31|0;31)m/' => '<span class="red-text">',
             '/\e\[1;31m/' => '<span class="bold-text red-text">',
@@ -323,7 +249,7 @@ class NucleiTest
             '/\e\[96m/' => '<span class="lightcyan-text">',
 
             '/\e\[0m/' => '</span>',
-        );
+        ];
 
         return preg_replace(array_keys($colorCodes), array_values($colorCodes), $output);
     }

@@ -17,4 +17,15 @@ class Filesystem
         // Trim the filename to a reasonable length
         return substr($filename, 0, 255);
     }
+
+    public function getPathFromElements(string ...$elements): string
+    {
+        array_walk($elements, function (string &$element) {
+            // Remove trailing slashes
+            $element = rtrim($element, DIRECTORY_SEPARATOR);
+        });
+
+        /** @var string[] $elements */
+        return implode(DIRECTORY_SEPARATOR, $elements);
+    }
 }

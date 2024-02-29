@@ -9,7 +9,6 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Authorization;
-use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -26,7 +25,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * TODO mivanci Full logging
  * @psalm-suppress InternalMethod
  */
-class NucleiTest2
+class NucleiTestBak
 {
     protected const KEY_NUCLEI = 'nuclei';
     protected const KEY_ASSERTION_CONSUMER_SERVICE = 'AssertionConsumerService';
@@ -119,43 +118,115 @@ class NucleiTest2
             });
         }
 
+        // TODO mivanci Export this path for usage in TestResults.
+        $nucleiDataDir = ($this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir())
+            . self::KEY_NUCLEI;
+
+
+        $nucleiPublicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
+            DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
+        $nucleiTemplatesDir = $nucleiPublicDir . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
+
         /** @psalm-suppress MixedAssignment */
         $templateId = $request->get('templateId');
         $templateId = empty($templateId) ? null : (string)$templateId;
 
-        if (!empty($templateId)) {
-            try {
-                $this->nucleiRunner->setTemplateId($templateId);
-            } catch (ConformanceException $exception) {
-                return new StreamedResponse(function () use ($templateId, $exception) {
-                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
-                });
-            }
+        if (empty($templateId)) {
+            return new StreamedResponse(function () {
+                echo 'No template ID provided.';
+            });
+        }
+
+        if ($templateId !== self::KEY_ALL_TEMPLATES) {
+            $nucleiTemplatesDir .= $templateId . self::KEY_TEMPLATE_EXTENSION;
+        }
+
+        if (!file_exists($nucleiTemplatesDir)) {
+            return new StreamedResponse(function () use ($nucleiTemplatesDir) {
+                echo "Template not valid ($nucleiTemplatesDir).";
+            });
         }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
-        $this->nucleiRunner->enableDebug = (bool) $request->get('enableDebug');
-        $this->nucleiRunner->enableVerbose = (bool) $request->get('enableVerbose');
-        $this->nucleiRunner->enableOutputExport = (bool) $request->get('enableOutputExport');
-        $this->nucleiRunner->enableFindingsExport = (bool) $request->get('enableFindingsExport');
-        $this->nucleiRunner->enableJsonExport = (bool) $request->get('enableJsonExport');
-        $this->nucleiRunner->enableJsonLExport = (bool) $request->get('enableJsonLExport');
-        $this->nucleiRunner->enableSarifExport = (bool) $request->get('enableSarifExport');
-        $this->nucleiRunner->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+        $conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
+            $this->sspBridge->utils()->http()->getBaseURL();
+        $conformanceIdpHostname = $this->moduleConfiguration->getConformanceIdpHostname() ??
+            $this->sspBridge->utils()->http()->getSelfHost();
+        $filename = $this->helpers->filesystem()->cleanFilename($spEntityId);
+
+
+        $enableDebug = (bool) $request->get('enableDebug');
+        $enableVerbose = (bool) $request->get('enableVerbose');
+        $enableOutputExport = (bool) $request->get('enableOutputExport');
+        $enableFindingsExport = (bool) $request->get('enableFindingsExport');
+        $enableJsonExport = (bool) $request->get('enableJsonExport');
+        $enableJsonLExport = (bool) $request->get('enableJsonLExport');
+        $enableSarifExport = (bool) $request->get('enableSarifExport');
+        $enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
 
         $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
         return new StreamedResponse(function () use (
+            $nucleiDataDir,
+            $nucleiTemplatesDir,
+            $testId,
             $spEntityId,
             $target,
             $acsUrl,
+            $conformanceIdpBaseUrl,
+            $conformanceIdpHostname,
+            $filename,
+            $enableDebug,
+            $enableVerbose,
+            $enableOutputExport,
+            $enableFindingsExport,
+            $enableJsonExport,
+            $enableJsonLExport,
+            $enableSarifExport,
+            $enableMarkdownExport,
             $token,
-            $testId,
         ): void {
+            // TODO mivanci Generalizie this so it can be resolved for viewing.
+            $spResultsDir = $nucleiDataDir . DIRECTORY_SEPARATOR .
+                'results' . DIRECTORY_SEPARATOR .
+                hash('sha256', $spEntityId);
+            $resultOutputDir =  $spResultsDir . DIRECTORY_SEPARATOR .
+                date('Y-m-d-H-i-s');
 
-        echo $this->nucleiRunner->prepareCommand($spEntityId, $target, $acsUrl, $token, $testId);die();
+            $numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
+            // Nuclei expects that the export file exists.
+            $outputExportFilename = "$resultOutputDir/findings.txt";
 
+            // TODO mivanci Move to separate service (Nuclei Shell Runner)
+            // TODO mivanci escapeshellarg every argument
+            $command =
+                "mkdir -p $resultOutputDir; " .
+                "nuclei -target $target " .
+                "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
+                "-templates $nucleiTemplatesDir " .
+                "-var TEST_ID=$testId " .
+                "-var SP_ENTITY_ID=$spEntityId " .
+                "-var CONSUMER_URL=$acsUrl " .
+                "-var CONFORMANCE_IDP_BASE_URL=$conformanceIdpBaseUrl " .
+                "-var CONFORMANCE_IDP_HOSTNAME=$conformanceIdpHostname " .
+                "-var RESULT_OUTPUT_DIR=$resultOutputDir " .
+                "-var FILENAME=$filename " .
+                "-var TOKEN=$token " .
+                ($enableFindingsExport ? "-output $outputExportFilename " : '') .
+                ($enableJsonExport ? "-json-export $resultOutputDir/json-output.json " : '') .
+                ($enableJsonLExport ? "-jsonl-export $resultOutputDir/jsonl-output.json " : '') .
+                ($enableSarifExport ? "-sarif-export $resultOutputDir/sarif-output.json " : '') .
+                ($enableMarkdownExport ? "-markdown-export $resultOutputDir/markdown " : '') .
+                ($enableDebug ? '-debug ' : '') .
+                ($enableVerbose ? '-verbose ' : '') .
+                "2>&1 " .
+                "| sed 's/$token/hidden/g' " . // Remove token from output
+                ($enableOutputExport ?  "| tee $resultOutputDir/output.txt; " : "; ") .
+                "find $resultOutputDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
+                // phpcs:ignore
+                "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
+            ;
 
             $descriptors = [
                 0 => ['pipe', 'r'],  // stdin
