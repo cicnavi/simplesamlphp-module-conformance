@@ -32,15 +32,21 @@
         </span>
       </div>
 
-      {# TODO mivanci generate from a list of available templates and make them more descriptive. #}
-      <div class="form-group">
-        <label for="templateId">Template</label>
-        <select id="templateId">
-          <option value="saml-raw-all" selected>SAML template using raw HTTP</option>
-          <option value="saml-headless-all" >SAML template using headless browser (experimental)</option>
-          <option value="">All templates</option>
-        </select>
-      </div>
+      {# TODO mivanci generate from a list of available templates. #}
+      {# TODO mivanci Temporarily hardcoded to raw http since headles version gives false positive #}
+{#      <div class="form-group">#}
+{#        <label for="templateId">Template</label>#}
+{#        <select id="templateId">#}
+{#          <option value="saml-raw-all" selected>SAML tests using raw HTTP (recommended)</option>#}
+{#          <option value="saml-headless-all" >SAML tests using headless browser (experimental)</option>#}
+{#          <option value="">All templates</option>#}
+{#        </select>#}
+{#        <span class="help">#}
+{#          You can choose specific template which will be used by Nuclei to run tests.#}
+{#        </span>#}
+{#      </div>#}
+
+      <input type="hidden" id="templateId" value="saml-raw-all">
 
       <div class="form-group">
         <label for="enableDebug">
