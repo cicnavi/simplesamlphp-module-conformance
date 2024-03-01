@@ -23,16 +23,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * TODO mivanci Full logging
  * @psalm-suppress InternalMethod
  */
 class NucleiTest
 {
-    protected const KEY_NUCLEI = 'nuclei';
     protected const KEY_ASSERTION_CONSUMER_SERVICE = 'AssertionConsumerService';
     protected const KEY_LOCATION = 'Location';
-    protected const KEY_ALL_TEMPLATES = 'all-templates';
-    protected const KEY_TEMPLATE_EXTENSION = '.yaml';
 
     public function __construct(
         protected Configuration $sspConfiguration,
@@ -148,6 +144,8 @@ class NucleiTest
 
         $command = $this->nucleiEnv->prepareCommand($spEntityId, $target, $acsUrl, $token, $testId);
 
+        $this->logger->debug('Nuclei command to run: ' . $command);
+
         return new StreamedResponse(
             function () use ($command, $token): void {
                 $descriptors = [
@@ -169,10 +167,11 @@ class NucleiTest
                 // Close unused pipes
                 fclose($pipes[0]);
 
-                // TODO mivanci Remove command print.
+                // Command print.
                 echo str_replace([$token], 'hidden', $command);
                 flush();
                 ob_flush();
+
                 // Read the output stream and send it to the browser in chunks
                 while (!feof($pipes[1])) {
                     // Read chunk, adjust size as needed
@@ -274,7 +273,7 @@ class NucleiTest
 
             return new JsonResponse(array_unique(array_column($acsArr, self::KEY_LOCATION)));
         } catch (\Throwable $exception) {
-            // Log
+            $this->logger->error('Error fetching ACSs: ' . $exception->getMessage());
         }
 
         return new JsonResponse([]);

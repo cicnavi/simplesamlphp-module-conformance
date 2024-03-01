@@ -14,6 +14,7 @@ use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
+use SimpleSAML\Module\conformance\NucleiEnv;
 use SimpleSAML\Module\conformance\SspBridge;
 use SimpleSAML\Module\conformance\TemplateFactory;
 use SplFileInfo;
@@ -32,6 +33,7 @@ class NucleiResults
         protected TemplateFactory $templateFactory,
         protected Authorization $authorization,
         protected MetaDataStorageHandler $metaDataStorageHandler,
+        protected NucleiEnv $nucleiEnv,
     ) {
     }
 
@@ -57,7 +59,7 @@ class NucleiResults
         $results = [];
         if (
             $selectedSpEntityId &&
-            file_exists($resultsDir = $this->resolveResultsDir($selectedSpEntityId))
+            file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($selectedSpEntityId))
         ) {
             // Create a RecursiveDirectoryIterator instance
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($resultsDir));
@@ -87,6 +89,7 @@ class NucleiResults
 
     /**
      * @psalm-suppress InternalMethod
+     * @throws AuthorizationException
      */
     public function download(Request $request): Response
     {
@@ -94,9 +97,8 @@ class NucleiResults
 
         $this->authorization->requireServiceProviderToken($request, $spEntityId);
 
-
         $result = (string) $request->get('result');
-        $filePath = $this->resolveResultsDir($spEntityId) . $result;
+        $filePath = $this->nucleiEnv->getSpResultsDir($spEntityId) . DIRECTORY_SEPARATOR . $result;
 
         if (! file_exists($filePath)) {
             return new Response(null, 404);
@@ -105,16 +107,5 @@ class NucleiResults
         $binaryFileResponse->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT);
 
         return $binaryFileResponse;
-    }
-
-    // TODO mivanci move to common resolver used in NucleiTest
-    protected function resolveResultsDir(string $selectedSpEntityId): string
-    {
-        $spIdentifier = hash('sha256', $selectedSpEntityId);
-        $nucleiDataDir = ($this->sspConfig->getPathValue('datadir') ?? sys_get_temp_dir()) . self::KEY_NUCLEI;
-
-        return $nucleiDataDir . DIRECTORY_SEPARATOR .
-            'results' . DIRECTORY_SEPARATOR .
-            $spIdentifier  . DIRECTORY_SEPARATOR;
     }
 }
