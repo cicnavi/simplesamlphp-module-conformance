@@ -85,7 +85,7 @@ class NucleiEnv
             "-var CONSUMER_URL=$acsUrl " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
-            "-var RESULT_OUTPUT_DIR={$this->getSpTestResultsDir($spEntityId)} " .
+            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
             "-var FILENAME={$this->helpers->filesystem()->cleanFilename($spEntityId)} " .
             "-var TOKEN=$token " .
             ($testId ? "-var TEST_ID=$testId " : '') .
