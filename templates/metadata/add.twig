@@ -1,10 +1,13 @@
-{% set pagetitle = 'Add SP metadata'|trans %}
-{% extends "base.twig" %}
+{% set subPageTitle = 'Add SP metadata'|trans %}
 
-{% block content %}
+{% extends "@conformance/base.twig" %}
 
-    <h2>{{ pagetitle }}</h2>
+{% block conformanceContent %}
 
+    <p>
+        Use the form below to add new / update existing Service Provider (SP) metadata. You can check for
+        available SP metadata in the standard administration area of SimpleSAMLphp.
+    </p>
 
     {% if status is not null %}
         <div class="code-box">
@@ -15,7 +18,6 @@
     {% endif -%}
 
     <form method="post" class="pure-form" enctype="multipart/form-data" action="{{ moduleURL('conformance/metadata/persist') }}">
-        <h3> {{ 'SP XML metadata'|trans }}</h3>
         <input type="hidden" name="fromUi" value="1">
         <div class="pure-control-group">
             <textarea name="xmlData" rows="20" class="text-area edge xmldata">{{ xmlData }}</textarea>
@@ -33,8 +35,9 @@
             <button class="pure-button pure-button-red pure-input-1-3">{{ 'Parse'|trans }}</button>
         </div>
     </form>
-{% endblock content -%}
+{% endblock conformanceContent -%}
 
 {% block postload %}
+    {{ parent() }}
     <script src="{{ asset('js/metadata-converter.js', 'admin') }}"></script>
 {% endblock postload %}

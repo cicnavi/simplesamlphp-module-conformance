@@ -1,52 +1,70 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Controllers;
 
-use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
-use SimpleSAML\Metadata\SAMLParser;
 use SimpleSAML\Module;
-use SimpleSAML\Module\conformance\ModuleConfig;
+use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Errors\AuthorizationException;
+use SimpleSAML\Module\conformance\GenericStatusFactory;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\GenericStatus;
-use SimpleSAML\Utils\XML;
-use SimpleSAML\XHTML\Template;
+use SimpleSAML\Module\conformance\SspBridge;
+use SimpleSAML\Module\conformance\TemplateFactory;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class Metadata
 {
-    const SET_SAML20_SP_REMOTE = 'saml20-sp-remote';
-
     public function __construct(
         protected Configuration $sspConfig,
-        protected ModuleConfig $moduleConfig,
+        protected ModuleConfiguration $moduleConfiguration,
         protected MetaDataStorageHandlerPdo $metaDataStorageHandlerPdo,
-        protected XML $xmlUtils,
+        protected SspBridge $sspBridge,
+        protected GenericStatusFactory $genericStatusFactory,
+        protected TemplateFactory $templateFactory,
+        protected Authorization $authorization,
     ) {
     }
 
     /**
-     * @throws ConfigurationError
+     * @throws ConfigurationError|Exception
+     * @throws AuthorizationException
      */
     public function add(Request $request): Response
     {
-        $status = GenericStatus::fromRequest($request);
-        $t = new Template($this->sspConfig, 'conformance:metadata_add.twig');
-        $t->data = [
+        $this->authorization->requireSimpleSAMLphpAdmin(true);
+
+        $status = $this->genericStatusFactory->fromRequest($request);
+        $template = $this->templateFactory->build(
+            ModuleConfiguration::MODULE_NAME . ':metadata/add.twig',
+            Module\conformance\Helpers\Routes::PATH_METADATA_ADD,
+        );
+
+        $template->data += [
             'xmlData' => null,
             ...$status->toArray(),
         ];
 
-        return $t;
+        return $template;
     }
 
+    /**
+     * @throws AuthorizationException
+     */
     public function persist(Request $request): Response
     {
+        $this->authorization->requireAdministrativeToken($request);
+
         $xmlData = $this->getXmlData($request);
 
         $requestStatus = new GenericStatus();
@@ -57,16 +75,15 @@ class Metadata
         }
 
         try {
-            $this->xmlUtils->checkSAMLMessage($xmlData, 'saml-meta');
+            $this->sspBridge->utils()->xml()->checkSAMLMessage($xmlData, 'saml-meta');
         } catch (Exception $exception) {
             $requestStatus->setStatusError()->setMessage('Invalid XML. ' . $exception->getMessage());
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
-            // TODO mivanci Create injected bridge.
-            $entities = SAMLParser::parseDescriptorsString($xmlData);
-        } catch (Exception $exception) {
+            $entities = $this->sspBridge->metadata()->samlParser()->parseDescriptorsString($xmlData);
+        } catch (Throwable $exception) {
             $requestStatus->setStatusError()->setMessage('Error parsing XML. ' . $exception->getMessage());
             return $this->prepareResponse($request, $requestStatus, 400);
         }
@@ -80,8 +97,8 @@ class Metadata
                     continue;
                 }
                 $this->metaDataStorageHandlerPdo->addEntry(
-                    $spEntity['entityid'],
-                    self::SET_SAML20_SP_REMOTE,
+                    (string)$spEntity['entityid'],
+                    SspBridge::KEY_SET_SP_REMOTE,
                     $spEntity
                 );
                 $spEntities[] = $spEntity;
@@ -91,7 +108,9 @@ class Metadata
         if (empty($spEntities)) {
             $requestStatus->setStatusOk()->setMessage('XML parsed, but no SP metadata found.');
         } else {
-            $requestStatus->setStatusOk()->setMessage(sprintf('Imported metadata for %s SPs.', count($spEntities)));
+            $requestStatus->setStatusOk()->setMessage(
+                sprintf('Imported/Updated metadata for %s SPs.', count($spEntities))
+            );
         }
 
         return $this->prepareResponse($request, $requestStatus);
@@ -101,19 +120,25 @@ class Metadata
     {
         if ($request->request->has('fromUi')) {
             return new RedirectResponse(
-                Module::getModuleURL(ModuleConfig::MODULE_NAME . '/metadata/add', $requestStatus->toArray())
+                $this->sspBridge->module()->getModuleURL(
+                    ModuleConfiguration::MODULE_NAME . '/metadata/add',
+                    $requestStatus->toArray()
+                )
             );
         }
 
-        return new JsonResponse($requestStatus->toArray(),$httpStatus);
+        return new JsonResponse($requestStatus->toArray(), $httpStatus);
     }
 
     protected function getXmlData(Request $request): ?string
     {
-        if ($xmlFile = $request->files->get('xmlFile')) {
+        /** @var ?UploadedFile $xmlFile */
+        $xmlFile = $request->files->get('xmlFile');
+
+        if ($xmlFile) {
             return trim(file_get_contents($xmlFile->getPathname()));
         } elseif ($xmlData = $request->request->get('xmlData')) {
-            return trim($xmlData);
+            return trim((string)$xmlData);
         }
 
         return null;

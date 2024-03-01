@@ -14,3 +14,34 @@ conformance-metadata-persist:
   controller: SimpleSAML\Module\conformance\Controllers\Metadata::persist
   methods:
     - POST
+
+conformance-nuclei-test-setup:
+  path: /nuclei/test/setup
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::setup
+  methods:
+    - GET
+
+conformance-nuclei-test-fetch-acss:
+  path: /nuclei/test/fetch-acss
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::fetchAcss
+  methods:
+    - GET
+
+conformance-nuclei-test-run:
+  path: /nuclei/test/run
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::run
+  methods:
+    - POST
+    - GET
+
+conformance-nuclei-results-index:
+  path: /nuclei/results
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::index
+  methods:
+    - GET
+
+conformance-nuclei-results-download:
+  path: /nuclei/results/download
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::download
+  methods:
+    - GET

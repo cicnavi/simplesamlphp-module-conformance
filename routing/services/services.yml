@@ -4,6 +4,7 @@ services:
     autowire: true
     public: false
     bind:
+      Psr\Log\LoggerInterface: '@SimpleSAML\Compat\Logger'
 
   # Services
   SimpleSAML\Module\conformance\:
@@ -20,3 +21,6 @@ services:
     arguments:
       - { }
   SimpleSAML\Utils\XML: ~
+  SimpleSAML\Compat\Logger: ~
+  SimpleSAML\Metadata\MetaDataStorageHandler:
+    factory: [ 'SimpleSAML\Metadata\MetaDataStorageHandler', 'getMetadataHandler' ]

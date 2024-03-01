@@ -1,49 +1,62 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\conformance\Auth\Process;
 
-use Cicnavi\SimpleFileCache\Exceptions\CacheException;
 use Exception;
-use Psr\SimpleCache\InvalidArgumentException;
-use SimpleSAML\Auth;
-use SimpleSAML\Module;
+use Psr\Log\LoggerInterface;
+use SimpleSAML\Auth\ProcessingFilter;
+use SimpleSAML\Compat\Logger;
+use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Cache;
+use SimpleSAML\Module\conformance\Errors\CacheException;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\Helpers\State;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
-use SimpleSAML\Module\conformance\ModuleConfig;
-use SimpleSAML\Utils\HTTP;
-use SimpleSAML\Module\conformance\Helpers\StateHelper;
+use SimpleSAML\Module\conformance\SspBridge;
+use Throwable;
 
-class Conformance extends Auth\ProcessingFilter
+class Conformance extends ProcessingFilter
 {
-	public const KEY_TEST_ID = 'testId';
-	public const KEY_RESPONDER = 'Responder';
-	public const KEY_STATE_STAGE_ID_TEST_SETUP = ModuleConfig::MODULE_NAME . '-test-setup';
-	public const KEY_STATE_ID = 'StateId';
-	public const KEY_SP_ENTITY_ID = 'spEntityId';
+    final public const KEY_TEST_ID = 'testId';
+    final public const KEY_STATE_STAGE_ID_TEST_SETUP = ModuleConfiguration::MODULE_NAME . '-test-setup';
+    final public const KEY_STATE_ID = 'StateId';
+    final public const KEY_SP_ENTITY_ID = 'spEntityId';
 
-	protected Cache $cache;
-	protected ResponderResolver $responderResolver;
-	protected StateHelper $stateHelper;
+    protected readonly Cache $cache;
 
-	/**
-	 * Initialize this filter.
-	 * Validate configuration parameters.
-	 *
-	 * @param array $config Configuration information about this filter.
-	 * @param mixed $reserved For future use.
-	 */
+    /**
+     * Initialize this filter.
+     * Validate configuration parameters.
+     *
+     * @param array $config Configuration information about this filter.
+     * @param mixed $reserved For future use.
+     * @throws CacheException
+     */
     public function __construct(
-	    array             $config,
-	                      $reserved,
-	    Cache             $cache = null,
-	    ResponderResolver $responderResolver = null,
-	    StateHelper       $stateHelper = null
-    )
-    {
+        array $config,
+        mixed $reserved,
+        Cache $cache = null,
+        protected readonly ResponderResolver $responderResolver = new ResponderResolver(),
+        protected readonly State $stateHelper = new State(),
+        protected readonly SspBridge $sspBridge = new SspBridge(),
+        Configuration $sspConfig = null,
+        protected readonly LoggerInterface $logger = new Logger(),
+    ) {
         parent::__construct($config, $reserved);
-		$this->cache = $cache ?? new Cache();
-		$this->responderResolver = $responderResolver ?? new ResponderResolver();
-		$this->stateHelper = $stateHelper ?? new StateHelper();
+
+        try {
+            $sspConfig ??= Configuration::getInstance();
+        } catch (Exception $exception) {
+            throw new CacheException(
+                'Unable to initialize SimpleSAMLphp configuration.',
+                (int)$exception->getCode(),
+                $exception
+            );
+        }
+        $this->cache = $cache ?? new Cache($sspConfig);
     }
 
 
@@ -51,44 +64,54 @@ class Conformance extends Auth\ProcessingFilter
      * Apply filter.
      *
      * @param array &$state The current request
-     * @throws Exception|InvalidArgumentException
+     * @throws ConformanceException
      */
     public function process(array &$state): void
     {
-	    $spEntityId = $this->stateHelper->resolveSpEntityId($state);
+        $this->logger->debug('Started Conformance authentication processing filter.');
+        $spEntityId = $this->stateHelper->resolveSpEntityId($state);
+        $this->logger->info("Resolved SP Entity ID: $spEntityId");
 
-		$testId = $this->resolveTestId($spEntityId);
+        $testId = $this->resolveTestId($spEntityId);
 
-		if (is_null($testId)) {
-			// Save state and redirect
-			// TODO mivanci Bridge SSP classes
-			$id = Auth\State::saveState($state, self::KEY_STATE_STAGE_ID_TEST_SETUP);
-			$url = Module::getModuleURL('conformance/test/setup');
-			$httpUtils = new HTTP();
-			$httpUtils->redirectTrustedURL($url, [self::KEY_STATE_ID => $id, self::KEY_SP_ENTITY_ID => $spEntityId]);
-		}
+        // If the test has not been pre-set, redirect to a page on which particular test can be chosen.
+        if (is_null($testId)) {
+            $this->logger->info("No test ID has been set, redirecting to test setup page.");
+            // Save state and redirect
+            $id = $this->sspBridge->auth()->state()->saveState($state, self::KEY_STATE_STAGE_ID_TEST_SETUP);
+            $url = $this->sspBridge->module()->getModuleURL('conformance/test/setup');
 
-	    $responderCallable = $this->responderResolver->fromTestId($testId);
-	    if (is_null($responderCallable)) {
-		    throw new Exception('No test responder available for test ID ' . $testId);
-	    }
-	    // TODO mivanci Check if responder already exists (it should, otherwise, the authproc is not set in IdP).
-	    $state[Conformance::KEY_RESPONDER] = $responderCallable;
+            $this->sspBridge->utils()->http()->redirectTrustedURL(
+                $url,
+                [self::KEY_STATE_ID => $id, self::KEY_SP_ENTITY_ID => $spEntityId]
+            );
+            return;
+        }
+
+        $this->logger->info("Resolved test ID: $testId");
+
+        $responderCallable = $this->responderResolver->fromTestIdOrThrow($testId);
+        $this->logger->info('Resolved responder callable.', [var_export($responderCallable, true)]);
+
+        $this->stateHelper->setResponder($state, $responderCallable);
+        $this->logger->debug('New responder callable set in state.');
     }
 
     /**
-     * @throws InvalidArgumentException
-     * @throws CacheException
-     * @throws \Cicnavi\SimpleFileCache\Exceptions\InvalidArgumentException
+     * @throws ConformanceException
      */
     protected function resolveTestId(string $spEntityId): ?string
-	{
-		$testId = $this->cache->getTestId($spEntityId);
+    {
+        try {
+            $testId = $this->cache->getTestId($spEntityId);
+        } catch (Throwable $exception) {
+            throw new ConformanceException('Error getting test ID from cache: ' . $exception->getMessage());
+        }
 
-		if (is_null($testId)) {
-			return null;
-		}
+        if (is_null($testId)) {
+            return null;
+        }
 
-		return $testId;
-	}
+        return $testId;
+    }
 }

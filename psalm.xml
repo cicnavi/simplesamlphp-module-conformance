@@ -31,5 +31,7 @@
         <UnusedClass errorLevel="suppress" />
         <PossiblyUnusedMethod errorLevel="suppress" />
         <PossiblyUnusedReturnValue errorLevel="suppress" />
+
+        <!-- Ignore internal method usage -->
     </issueHandlers>
 </psalm>

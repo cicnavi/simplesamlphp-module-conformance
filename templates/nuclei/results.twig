@@ -1,0 +1,47 @@
+{% set subPageTitle = 'Nuclei Results'|trans %}
+
+{% extends "@conformance/base.twig" %}
+
+{% block conformanceContent %}
+
+  <p>
+    Choose a Service Provider for which you want to list available test results / artifacts.
+  </p>
+
+  <div class="form-container">
+    <form id="resultsForm" method="get" action="results">
+      <div class="form-group">
+        <label for="spEntityId">Service Provider (SP)</label>
+        <select id="spEntityId" name="spEntityId">
+          <option value=""></option>
+          {% for entityId, serviceProvider in serviceProviders %}
+            <option value="{{ entityId }}" {{ entityId == selectedSpEntityId ? 'selected' : '' }}>
+              {{ entityId }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <div class="results-container">
+    {% if results and selectedSpEntityId %}
+      <ul>
+      {% for result in results %}
+        <li>
+          * <a href="results/download?spEntityId={{ selectedSpEntityId|url_encode }}&result={{ result|url_encode }}">
+            {{ result }}
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block postload %}
+  {{ parent() }}
+
+  <script src="{{ asset('js/src/test-results.js', 'conformance') }}"></script>
+{% endblock %}

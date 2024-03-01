@@ -1,0 +1,64 @@
+id: saml-headless-all
+info:
+  name: SAML signature validation
+  severity: high
+  author: T&I Incubator, GÉANT
+  tags: saml,signature
+variables:
+  filename: "{{replace_regex(BaseURL,'(\\W+)','_')}}"
+  TEST_CASES:
+    - noSignature
+    - invalidSignature
+  TEST_CASE: "standardResponse" # Start with this test.
+
+flow: |
+  set("TEST_CASE", "standardResponse");
+  headless();
+  set("VALID_STATUS_CODE", template["http_status_code"]);
+  set("VALID_BODY", template["http_body"]);
+  for (let testcase of iterate(template["TEST_CASES"])) {
+    set("TEST_CASE", testcase);
+    headless();
+  }
+
+headless:
+  - steps:
+    - action: sleep
+      args:
+        duration: 2
+    - action: setheader
+      args:
+        part: request # can be request too
+        key: Authorization
+        value: "Bearer {{TOKEN}}"
+    - action: navigate
+      args:
+        url: "{{trim_suffix(CONFORMANCE_IDP_BASE_URL, '/')}}/module.php/conformance/test/setup?testId={{url_encode(TEST_CASE)}}&spEntityId={{url_encode(SP_ENTITY_ID)}}"
+    - action: waitload
+    - action: navigate
+      args:
+        url: "{{trim_suffix(CONFORMANCE_IDP_BASE_URL,'/')}}/saml2/idp/SSOService.php?spentityid={{url_encode(SP_ENTITY_ID)}}&ConsumerURL={{url_encode(CONSUMER_URL)}}"
+    - action: waitload
+    - action: screenshot
+      args:
+        fullpage: "true"
+        mkdir: "true"
+        to: "{{RESULT_OUTPUT_DIR}}/{{TEST_CASE}}-{{FILENAME}}"
+#    disable-path-automerge: true
+    matchers-condition: and
+    matchers:
+      - part: resp
+        type: status
+        status:
+          - 200
+          - 302
+          - 303
+      - type: dsl
+        dsl:
+          # ignore the happy case
+          - '!contains(TEST_CASE, "standardResponse")'
+        condition: and
+    extractors:
+      - type: dsl
+        dsl:
+          - "TEST_CASE"
