@@ -1,0 +1,64 @@
+{% set subPageTitle = 'Overview'|trans %}
+
+{% extends "@conformance/base.twig" %}
+
+{% block conformanceContent %}
+
+    <p>
+        Conformance module overview.
+    </p>
+
+    {% if genericStatus and genericStatus is not null and genericStatus.status is not null %}
+        <div class="code-box">
+            <div class="code-box-content">
+                <pre id="" class="">{{ genericStatus.status|escape|upper }}: {{ genericStatus.message|escape }}</pre>
+            </div>
+        </div>
+    {% endif -%}
+
+    <h4>Nuclei</h4>
+
+    <p>
+        Conformance module depends on Nuclei to run the SAML security related tests. Your Nuclei version is:
+    </p>
+
+    <pre>
+        {%- if nucleiStatus %}
+            {{- nucleiStatus|striptags('<span>')|raw -}}
+        {% else %}
+            {{- 'Error: could not get Nuclei version, no output.'|trans -}}
+        {% endif %}
+    </pre>
+
+    <br>
+
+    <h4>Migrations</h4>
+
+    <p>
+        Conformance module uses a database to store different things related to test runs.
+    </p>
+    {%- if migrator.nonImplementedMigrations %}
+        <p>There are database migrations that have not been implemented. Use the button below to run them now.</p>
+        <ul>
+            {% for migration in migrator.nonImplementedMigrations %}
+                <li>* {{ migration }}</li>
+            {% endfor %}
+        </ul>
+        <br>
+
+        <form method="post" class="pure-form" action="{{ moduleURL('conformance/overview/run-migrations') }}">
+            <input type="hidden" name="fromUi" value="1">
+            <button class="pure-button pure-button-red ">{{ 'Run migrations'|trans }}</button>
+        </form>
+    {% else %}
+        <pre><span>{{- 'OK: all database migrations are implemented.'|trans -}}</span></pre>
+    {% endif %}
+
+
+
+{% endblock conformanceContent -%}
+
+{% block postload %}
+    {{ parent() }}
+    <script src="{{ asset('js/metadata-converter.js', 'admin') }}"></script>
+{% endblock postload %}

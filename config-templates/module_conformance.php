@@ -44,4 +44,9 @@ $config = [
      * Number of Nuclei results to keep per Service Provider (SP).
      */
     ModuleConfiguration::OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP => 10,
+
+    /**
+     * Prefix to apply to DB tables names related to the conformance module.
+     */
+    ModuleConfiguration::OPTION_DATABASE_TABLE_NAMES_PREFIX => 'cnfrmnc_',
 ];

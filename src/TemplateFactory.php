@@ -28,8 +28,11 @@ class TemplateFactory
     /**
      * @throws ConfigurationError|Exception
      */
-    public function build(string $template, string $activeHrefPath = null): Template
-    {
+    public function build(
+        string $template,
+        string $activeHrefPath = null,
+        GenericStatus $genericStatus = null
+    ): Template {
         $template = new Template($this->sspConfiguration, $template);
         $template->getLocalization()->addModuleDomain(ModuleConfiguration::MODULE_NAME);
 
@@ -46,6 +49,7 @@ class TemplateFactory
             'moduleConfiguration' => $this->moduleConfiguration,
             'menu' => $this->menu,
             'showMenu' => $this->showMenu,
+            'genericStatus' => $genericStatus,
         ];
 
         return $template;
@@ -56,7 +60,12 @@ class TemplateFactory
      */
     protected function includeDefaultMenuItems(): void
     {
-        // TODO mivanci Add an Overview item.
+        $this->menu->addItem(
+            $this->menu->buildItem(
+                $this->generateFullHrefPath(Routes::PATH_OVERVIEW_INDEX),
+                \SimpleSAML\Locale\Translate::noop('Overview'),
+            )
+        );
 
         $this->menu->addItem(
             $this->menu->buildItem(

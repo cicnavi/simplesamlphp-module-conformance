@@ -12,6 +12,7 @@ use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
+use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\NucleiEnv;
@@ -34,6 +35,7 @@ class NucleiResults
         protected Authorization $authorization,
         protected MetaDataStorageHandler $metaDataStorageHandler,
         protected NucleiEnv $nucleiEnv,
+        protected Helpers $helpers,
     ) {
     }
 
@@ -61,19 +63,10 @@ class NucleiResults
             $selectedSpEntityId &&
             file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($selectedSpEntityId))
         ) {
-            // Create a RecursiveDirectoryIterator instance
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($resultsDir));
-
-            // Iterate through each file in the directory
-            /** @var SplFileInfo $file */
-            foreach ($iterator as $file) {
-                // Check if it's a regular file (not a directory)
-                if ($file->isFile()) {
-                    $results[] = str_replace($resultsDir, '', $file->getPathname()) ;
-                }
-            }
-
-            arsort($results);
+            $results = $this->helpers->filesystem()->listFilesInDirectory(
+                $resultsDir,
+                Helpers\Filesystem::KEY_SORT_DESC,
+            );
         }
 
         $template = $this->templateFactory->build(

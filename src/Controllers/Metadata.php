@@ -67,6 +67,7 @@ class Metadata
 
         $xmlData = $this->getXmlData($request);
 
+        // TODO mivanci move to GenericStatusFactory
         $requestStatus = new GenericStatus();
 
         if (empty($xmlData)) {

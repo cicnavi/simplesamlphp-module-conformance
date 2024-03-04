@@ -24,6 +24,7 @@ class ModuleConfiguration
     final public const OPTION_ADMINISTRATIVE_TOKENS = 'administrative-tokens';
     final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
     final public const OPTION_LOCAL_TEST_RUNNER_TOKEN = 'local-test-runner-token';
+    final public const OPTION_DATABASE_TABLE_NAMES_PREFIX = 'database-table-name-prefix';
 
     /**
      * Contains configuration from module configuration file.
@@ -138,5 +139,10 @@ class ModuleConfiguration
     public function getNumberOfResultsToKeepPerSp(): int
     {
         return $this->getConfig()->getIntegerRange(self::OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP, 1, 1000);
+    }
+
+    public function getDatabaseTableNamesPrefix(): string
+    {
+        return $this->getConfig()->getOptionalString(self::OPTION_DATABASE_TABLE_NAMES_PREFIX, 'cnfrmnc_');
     }
 }

@@ -1,4 +1,15 @@
 
+conformance-overview:
+  path: /overview
+  controller: SimpleSAML\Module\conformance\Controllers\Overview::index
+
+conformance-overview-run-migrations:
+  path: /overview/run-migrations
+  controller: SimpleSAML\Module\conformance\Controllers\Overview::runMigrations
+  methods:
+    - POST
+    - GET
+
 conformance-test-setup:
   path: /test/setup
   controller: SimpleSAML\Module\conformance\Controllers\TestSetup::setup

@@ -24,3 +24,5 @@ services:
   SimpleSAML\Compat\Logger: ~
   SimpleSAML\Metadata\MetaDataStorageHandler:
     factory: [ 'SimpleSAML\Metadata\MetaDataStorageHandler', 'getMetadataHandler' ]
+  SimpleSAML\Database:
+    factory: [ 'SimpleSAML\Database', 'getInstance' ]
