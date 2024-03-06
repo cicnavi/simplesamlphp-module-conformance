@@ -16,6 +16,7 @@ class Routes
     final public const PATH_METADATA_ADD = 'metadata/add';
     final public const PATH_TEST_NUCLEI_SETUP = 'nuclei/test/setup';
     final public const PATH_TEST_RESULTS = 'nuclei/results';
+    final public const PATH_OVERVIEW_INDEX = 'overview';
 
     protected HTTP $sspHttpUtils;
     protected Arr $arr;

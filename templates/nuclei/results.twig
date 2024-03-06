@@ -25,16 +25,37 @@
   </div>
 
   <div class="results-container">
-    {% if results and selectedSpEntityId %}
-      <ul>
-      {% for result in results %}
-        <li>
-          * <a href="results/download?spEntityId={{ selectedSpEntityId|url_encode }}&result={{ result|url_encode }}">
-            {{ result }}
-          </a>
-        </li>
+    {% if artifacts and selectedSpEntityId %}
+
+    {% if latestStatus %}
+        <h4>Latest test from {{ latestStatus.timestamp|date }}</h4>
+        <br>
+        <ul>
+            <li><strong>Status:</strong> {{ latestStatus.isOk ? 'OK' : 'FAILING' }}</li>
+            <li><strong>Description:</strong> {{ latestStatus.description }}</li>
+        </ul>
+    {% endif %}
+      <br>
+      <h4>Artifacts from all tests</h4>
+      {% for timestamp, entries in artifacts %}
+        <br>
+        <span>{{ timestamp|date }}</span>
+        <hr>
+        <br>
+        <ul>
+          {% for entry in entries %}
+          <li>
+            * <a href="results/download?spEntityId={{ selectedSpEntityId|url_encode }}&result={{ timestamp }}/{{ entry|url_encode }}">
+              {{ entry }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
       {% endfor %}
-      </ul>
+    {% elseif selectedSpEntityId %}
+      <p>
+        No entries for selected SP.
+      </p>
     {% endif %}
   </div>
 

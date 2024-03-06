@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace SimpleSAML\Module\conformance;
 
 use SimpleSAML\Module\conformance\Helpers\Arr;
+use SimpleSAML\Module\conformance\Helpers\Database;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
+use SimpleSAML\Module\conformance\Helpers\Shell;
 use SimpleSAML\Module\conformance\Helpers\State;
 
 class Helpers
@@ -15,6 +17,9 @@ class Helpers
     protected static ?Filesystem $filesystem = null;
     protected static ?Routes $routes = null;
     protected static ?State $state = null;
+
+    protected static ?Database $database = null;
+    protected static ?Shell $shell = null;
 
     public function arr(): Arr
     {
@@ -33,5 +38,15 @@ class Helpers
     public function state(): State
     {
         return self::$state ??= new State();
+    }
+
+    public function database(): Database
+    {
+        return self::$database ??= new Database();
+    }
+
+    public function shell(): Shell
+    {
+        return self::$shell ??= new Shell();
     }
 }

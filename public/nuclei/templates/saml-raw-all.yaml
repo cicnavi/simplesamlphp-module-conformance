@@ -50,9 +50,9 @@ http:
   # HTTP-POST binding
   - raw:
       - |
-        @Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "/.*", "")}}
+        @Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "https?://|/.*", "")}}
         POST {{trim(acs,"[]")}} HTTP/1.1
-        Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "/.*", "")}}
+        Host: {{replace_regex(trim_prefix(trim(acs,"[]"), "https://"), "https?://|/.*", "")}}
         Content-Type: application/x-www-form-urlencoded
 
         SAMLResponse={{url_encode(trim(samlresponse,"[]"))}}

@@ -115,30 +115,32 @@ class NucleiTest
             });
         }
 
+        // TODO mivanci remove if not necessary.
         /** @psalm-suppress MixedAssignment */
-        $templateId = $request->get('templateId');
-        $templateId = empty($templateId) ? null : (string)$templateId;
-
-        if (!empty($templateId)) {
-            try {
-                $this->nucleiEnv->setTemplateId($templateId);
-            } catch (ConformanceException $exception) {
-                return new StreamedResponse(function () use ($templateId, $exception) {
-                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
-                });
-            }
-        }
+//        $templateId = $request->get('templateId');
+//        $templateId = empty($templateId) ? null : (string)$templateId;
+//
+//        if (!empty($templateId)) {
+//            try {
+//                $this->nucleiEnv->setTemplateId($templateId);
+//            } catch (ConformanceException $exception) {
+//                return new StreamedResponse(function () use ($templateId, $exception) {
+//                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
+//                });
+//            }
+//        }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
         $this->nucleiEnv->enableDebug = (bool) $request->get('enableDebug');
         $this->nucleiEnv->enableVerbose = (bool) $request->get('enableVerbose');
-        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
-        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
-        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
-        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
-        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
-        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+        // TODO mivanci remove if not necessary.
+//        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
+//        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
+//        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
+//        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
+//        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
+//        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
 
         $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
@@ -179,7 +181,7 @@ class NucleiTest
                     // Keep a token for newline control character
                     //$output = str_replace("\n", '--newlinetoken--', $output);
                     // Replace common color codes.
-                    $output = $this->replaceColorCodes($output);
+                    $output = $this->helpers->shell()->replaceColorCodes($output);
                     // Get rid of other special chars
                     // phpcs:ignore
                     //$output = filter_var($output, FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
@@ -210,47 +212,6 @@ class NucleiTest
             200,
             $headers
         );
-    }
-
-    /**
-     * Replace ANSI color codes with HTML or other formatting. Update as needed.
-     */
-    protected function replaceColorCodes(string $output): string
-    {
-        //return $output;
-        $colorCodes = [
-            '/\e\[(30|0;30)m/' => '<span class="black-text">',
-            '/\e\[(31|0;31)m/' => '<span class="red-text">',
-            '/\e\[1;31m/' => '<span class="bold-text red-text">',
-            '/\e\[(32|0;32)m/' => '<span class="green-text">',
-            '/\e\[(33|0;33)m/' => '<span class="yellow-text">',
-            '/\e\[(34|0;34)m/' => '<span class="blue-text">',
-            '/\e\[(35|0;35)m/' => '<span class="magenta-text">',
-            '/\e\[(36|0;36)m/' => '<span class="cyan-text">',
-            '/\e\[(37|0;37)m/' => '<span class="white-text">',
-            '/\e\[40m/' => '<span class="black-bg">',
-            '/\e\[41m/' => '<span class="red-bg">',
-            '/\e\[42m/' => '<span class="green-bg;">',
-            '/\e\[43m/' => '<span class="yellow-bg;">',
-            '/\e\[44m/' => '<span class="blue-bg">',
-            '/\e\[45m/' => '<span class="magenta-bg;">',
-            '/\e\[46m/' => '<span class="cyan-bg">',
-            '/\e\[47m/' => '<span class="white-bg;">',
-            '/\e\[1m/' => '<span class="bold-text">',
-            '/\e\[4m/' => '<span class="underline-text">',
-            '/\e\[5m/' => '<span class="blink-text;">',
-            '/\e\[7m/' => '<span class="blue-bg white-text">',
-            '/\e\[92m/' => '<span class="green-text">',
-            '/\e\[91m/' => '<span class="lightcoral-text">',
-            '/\e\[1;92m/' => '<span class="bold-text green-text">',
-            '/\e\[93m/' => '<span class="yellow-text">',
-            '/\e\[94m/' => '<span class="blue-text">',
-            '/\e\[96m/' => '<span class="lightcyan-text">',
-
-            '/\e\[0m/' => '</span>',
-        ];
-
-        return preg_replace(array_keys($colorCodes), array_values($colorCodes), $output);
     }
 
     /**

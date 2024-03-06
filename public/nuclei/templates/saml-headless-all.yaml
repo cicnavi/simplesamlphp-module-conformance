@@ -43,20 +43,22 @@ headless:
       args:
         fullpage: "true"
         mkdir: "true"
-        to: "{{RESULT_OUTPUT_DIR}}/{{TEST_CASE}}-{{FILENAME}}"
+#        to: "{{RESULT_OUTPUT_DIR}}/{{TEST_CASE}}-{{FILENAME}}"
+        to: "{{RESULT_OUTPUT_DIR}}/pictures/{{TEST_CASE}}"
 #    disable-path-automerge: true
     matchers-condition: and
     matchers:
-      - part: resp
-        type: status
-        status:
-          - 200
-          - 302
-          - 303
+#      - part: resp
+#        type: status
+#        status:
+#          - 200
+#          - 302
+#          - 303
       - type: dsl
         dsl:
           # ignore the happy case
-          - '!contains(TEST_CASE, "standardResponse")'
+#          - '!contains(TEST_CASE, "standardResponse")'
+          - 'contains(TEST_CASE, TEST_CASE)' # Just to get a match.
         condition: and
     extractors:
       - type: dsl

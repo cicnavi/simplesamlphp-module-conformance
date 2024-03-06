@@ -15,7 +15,6 @@ class TemplateFactory
 {
     protected bool $showMenu = true;
     protected bool $includeDefaultMenuItems = true;
-    protected ?string $activeHrefPath = null;
 
     public function __construct(
         protected Configuration $sspConfiguration,
@@ -28,8 +27,11 @@ class TemplateFactory
     /**
      * @throws ConfigurationError|Exception
      */
-    public function build(string $template, string $activeHrefPath = null): Template
-    {
+    public function build(
+        string $template,
+        string $activeHrefPath = null,
+        GenericStatus $genericStatus = null
+    ): Template {
         $template = new Template($this->sspConfiguration, $template);
         $template->getLocalization()->addModuleDomain(ModuleConfiguration::MODULE_NAME);
 
@@ -46,6 +48,7 @@ class TemplateFactory
             'moduleConfiguration' => $this->moduleConfiguration,
             'menu' => $this->menu,
             'showMenu' => $this->showMenu,
+            'genericStatus' => $genericStatus,
         ];
 
         return $template;
@@ -56,8 +59,6 @@ class TemplateFactory
      */
     protected function includeDefaultMenuItems(): void
     {
-        // TODO mivanci Add an Overview item.
-
         $this->menu->addItem(
             $this->menu->buildItem(
                 $this->generateFullHrefPath(Routes::PATH_TEST_NUCLEI_SETUP),
@@ -76,6 +77,13 @@ class TemplateFactory
             $this->menu->buildItem(
                 $this->generateFullHrefPath(Routes::PATH_METADATA_ADD),
                 \SimpleSAML\Locale\Translate::noop('Add SP Metadata'),
+            )
+        );
+
+        $this->menu->addItem(
+            $this->menu->buildItem(
+                $this->generateFullHrefPath(Routes::PATH_OVERVIEW_INDEX),
+                \SimpleSAML\Locale\Translate::noop('Module Overview'),
             )
         );
 
@@ -109,12 +117,12 @@ class TemplateFactory
 
     public function setActiveHrefPath(?string $activeHrefPath): TemplateFactory
     {
-        $this->activeHrefPath = $activeHrefPath ? $this->generateFullHrefPath($activeHrefPath) : null;
+        $this->menu->setActiveHrefPath($activeHrefPath ? $this->generateFullHrefPath($activeHrefPath) : null);
         return $this;
     }
 
     public function getActiveHrefPath(): ?string
     {
-        return $this->activeHrefPath;
+        return $this->menu->getActiveHrefPath();
     }
 }
