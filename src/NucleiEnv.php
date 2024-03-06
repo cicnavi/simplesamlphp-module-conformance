@@ -12,7 +12,6 @@ class NucleiEnv
 {
     public const KEY_NUCLEI = 'nuclei';
     public const KEY_TEMPLATE_EXTENSION = '.yaml';
-    public const DATE_FORMAT = 'YmdHis';
 
     public const FILE_OUTPUT_EXPORT = 'output.txt';
     public const FILE_FINDINGS_EXPORT = 'findings.txt';
@@ -20,6 +19,8 @@ class NucleiEnv
     public const FILE_JSONL_EXPORT = 'jsonl-output.json';
     public const FILE_SARIF_EXPORT = 'sarif-output.json';
     public const DIR_MARKDOWN_EXPORT = 'markdown';
+    public const NUCLEI_TEMPLATE_SAML_RAW_ALL = 'saml-raw-all';
+    public const NUCLEI_TEMPLATE_SAML_HEADLESS_ALL = 'saml-headless-all';
 
     public readonly string $dataDir;
     public readonly string $publicDir;
@@ -69,14 +70,19 @@ class NucleiEnv
         string $testId = null,
     ): string {
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
+        $fileName = $this->helpers->filesystem()->cleanFilename($spEntityId);
 
+        // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
         $target = escapeshellarg($target);
         $acsUrl = escapeshellarg($ascUrl);
         $token = escapeshellarg($token);
         $testId = empty($testId) ? null : escapeshellarg($testId);
 
-        return
+        // First use the raw HTTP template to run the tests.
+        $this->templateId = self::NUCLEI_TEMPLATE_SAML_RAW_ALL;
+
+        $command =
             "mkdir -p $spTestResultsDir; " .
             "nuclei -target $target " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
@@ -86,7 +92,7 @@ class NucleiEnv
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
             "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
-            "-var FILENAME={$this->helpers->filesystem()->cleanFilename($spEntityId)} " .
+            "-var FILENAME=$fileName " .
             "-var TOKEN=$token " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
@@ -98,11 +104,39 @@ class NucleiEnv
             ($this->enableVerbose ? '-verbose ' : '') .
             "2>&1 " .
             "| sed 's/$token/hidden/g' " . // Remove token from output
-            ($this->enableOutputExport ?  "| tee {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_OUTPUT_EXPORT)}; " : "; ") .
+            ($this->enableOutputExport ?  "| tee {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_OUTPUT_EXPORT)}; " : "; ")
+        ;
+
+        // Now use headless browser template to take the pictures only.
+        $this->templateId = self::NUCLEI_TEMPLATE_SAML_HEADLESS_ALL;
+
+        // Currently no result exports because of the false positive matches with headless browser.
+        $command .=
+            "nuclei -target $target " .
+            "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
+            "-templates {$this->getTemplatesPath()} " .
+            "-var SP_ENTITY_ID=$spEntityId " .
+            "-var CONSUMER_URL=$acsUrl " .
+            "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
+            "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
+            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
+            "-var FILENAME=$fileName " .
+            "-var TOKEN=$token " .
+            ($testId ? "-var TEST_ID=$testId " : '') .
+            ($this->enableDebug ? '-debug ' : '') .
+            ($this->enableVerbose ? '-verbose ' : '') .
+            "2>&1 " .
+            "| sed 's/$token/hidden/g'; " // Remove token from output
+        ;
+
+        // Cleanup part of the tests.
+        $command .=
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
             "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
         ;
+
+        return $command;
     }
 
     public function getSpResultsDir(string $spEntityId): string
@@ -118,7 +152,7 @@ class NucleiEnv
     public function getSpTestResultsDir(string $spEntityId, string $testInstanceIdentifier = null): string
     {
         return $this->getSpResultsDir($spEntityId) . DIRECTORY_SEPARATOR .
-            ($testInstanceIdentifier ?? date(self::DATE_FORMAT));
+            ($testInstanceIdentifier ?? (new \DateTime())->getTimestamp());
     }
 
     /**

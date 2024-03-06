@@ -72,27 +72,27 @@
         const outputElement = document.getElementById('cmd-output');
         outputElement.innerHTML = 'Request sent, waiting for output...';
 
-        const templateInputElement = document.getElementById('templateId');
+        // const templateInputElement = document.getElementById('templateId');
         const enableDebugElement = document.getElementById('enableDebug');
         const enableVerboseElement = document.getElementById('enableVerbose');
-        const enableOutputExportElement = document.getElementById('enableOutputExport');
-        const enableFindingsExportElement = document.getElementById('enableFindingsExport');
-        const enableJsonExportElement = document.getElementById('enableJsonExport');
-        const enableJsonLExportElement = document.getElementById('enableJsonLExport');
-        const enableSarifExportElement = document.getElementById('enableSarifExport');
-        const enableMarkdownExportElement = document.getElementById('enableMarkdownExport');
+        // const enableOutputExportElement = document.getElementById('enableOutputExport');
+        // const enableFindingsExportElement = document.getElementById('enableFindingsExport');
+        // const enableJsonExportElement = document.getElementById('enableJsonExport');
+        // const enableJsonLExportElement = document.getElementById('enableJsonLExport');
+        // const enableSarifExportElement = document.getElementById('enableSarifExport');
+        // const enableMarkdownExportElement = document.getElementById('enableMarkdownExport');
 
         const formData = new URLSearchParams();
-        formData.append('templateId', templateInputElement.value);
+        // formData.append('templateId', templateInputElement.value);
         formData.append('spEntityId', spEntityIdSelect.value);
         formData.append('enableDebug', enableDebugElement.checked ? '1' : '0');
         formData.append('enableVerbose', enableVerboseElement.checked ? '1' : '0');
-        formData.append('enableOutputExport', enableOutputExportElement.checked ? '1' : '0');
-        formData.append('enableFindingsExport', enableFindingsExportElement.checked ? '1' : '0');
-        formData.append('enableJsonExport', enableJsonExportElement.checked ? '1' : '0');
-        formData.append('enableJsonLExport', enableJsonLExportElement.checked ? '1' : '0');
-        formData.append('enableSarifExport', enableSarifExportElement.checked ? '1' : '0');
-        formData.append('enableMarkdownExport', enableMarkdownExportElement.checked ? '1' : '0');
+        // formData.append('enableOutputExport', enableOutputExportElement.checked ? '1' : '0');
+        // formData.append('enableFindingsExport', enableFindingsExportElement.checked ? '1' : '0');
+        // formData.append('enableJsonExport', enableJsonExportElement.checked ? '1' : '0');
+        // formData.append('enableJsonLExport', enableJsonLExportElement.checked ? '1' : '0');
+        // formData.append('enableSarifExport', enableSarifExportElement.checked ? '1' : '0');
+        // formData.append('enableMarkdownExport', enableMarkdownExportElement.checked ? '1' : '0');
 
         if (acsUrlSelect.value) {
             formData.append('acsUrl', acsUrlSelect.value);

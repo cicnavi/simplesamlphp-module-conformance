@@ -115,30 +115,32 @@ class NucleiTest
             });
         }
 
+        // TODO mivanci remove if not necessary.
         /** @psalm-suppress MixedAssignment */
-        $templateId = $request->get('templateId');
-        $templateId = empty($templateId) ? null : (string)$templateId;
-
-        if (!empty($templateId)) {
-            try {
-                $this->nucleiEnv->setTemplateId($templateId);
-            } catch (ConformanceException $exception) {
-                return new StreamedResponse(function () use ($templateId, $exception) {
-                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
-                });
-            }
-        }
+//        $templateId = $request->get('templateId');
+//        $templateId = empty($templateId) ? null : (string)$templateId;
+//
+//        if (!empty($templateId)) {
+//            try {
+//                $this->nucleiEnv->setTemplateId($templateId);
+//            } catch (ConformanceException $exception) {
+//                return new StreamedResponse(function () use ($templateId, $exception) {
+//                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
+//                });
+//            }
+//        }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
 
         $this->nucleiEnv->enableDebug = (bool) $request->get('enableDebug');
         $this->nucleiEnv->enableVerbose = (bool) $request->get('enableVerbose');
-        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
-        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
-        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
-        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
-        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
-        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
+        // TODO mivanci remove if not necessary.
+//        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
+//        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
+//        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
+//        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
+//        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
+//        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
 
         $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 

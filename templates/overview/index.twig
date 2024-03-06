@@ -1,12 +1,10 @@
-{% set subPageTitle = 'Overview'|trans %}
+{% set subPageTitle = 'Module Overview'|trans %}
 
 {% extends "@conformance/base.twig" %}
 
 {% block conformanceContent %}
 
-    <p>
-        Conformance module overview.
-    </p>
+    <p>Conformance module overview and setup.</p>
 
     {% if genericStatus and genericStatus is not null and genericStatus.status is not null %}
         <div class="code-box">
@@ -19,7 +17,7 @@
     <h4>Nuclei</h4>
 
     <p>
-        Conformance module depends on Nuclei to run the SAML security related tests. Your Nuclei version is:
+        Conformance module depends on Nuclei to run the SAML security related tests. Nuclei info is:
     </p>
 
     <pre>
@@ -53,6 +51,55 @@
     {% else %}
         <pre><span>{{- 'OK: all database migrations are implemented.'|trans -}}</span></pre>
     {% endif %}
+
+    <br>
+    <h4>Administrative authorization tokens</h4>
+
+    <p>These tokens can be used for API actions on all SPs.</p>
+
+    {%- if moduleConfiguration.administrativeTokens -%}
+        <table class="pure-table pure-table-bordered">
+            <thead>
+            <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+            {%- for token, description in moduleConfiguration.administrativeTokens -%}
+                <tr><td>{{ token }}</td><td>{{ description }}</td></tr>
+            {% endfor -%}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No administrative tokens available.</p>
+    {% endif %}
+
+    <br>
+    <h4>Service Provider authorization tokens</h4>
+
+    <p>These tokens can be used for API actions on particular SPs.</p>
+
+    {%- if moduleConfiguration.serviceProviderTokens -%}
+        <table class="pure-table pure-table-bordered">
+            <thead>
+            <tr><th>Value</th><th>Service providers</th></tr>
+            </thead>
+            <tbody>
+            {%- for token, serviceProviders in moduleConfiguration.serviceProviderTokens -%}
+                <tr>
+                    <td>{{ token }}</td>
+                    <td>
+                        {% for sp in serviceProviders %}
+                            {{ sp }}<br>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor -%}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No administrative tokens available.</p>
+    {% endif %}
+
+
 
 
 

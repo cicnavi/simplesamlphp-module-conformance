@@ -42,8 +42,7 @@ class Filesystem
         string $directory,
         string $sortOrder = self::KEY_SORT_ASC,
         bool $onlyReturnFileName = true,
-    ): array
-    {
+    ): array {
         $files = [];
 
         // Create a RecursiveDirectoryIterator instance
@@ -52,7 +51,6 @@ class Filesystem
         // Iterate through each file in the directory
         /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
-
             // Check if it's a regular file (not a directory)
             if (!$file->isFile()) {
                 continue;

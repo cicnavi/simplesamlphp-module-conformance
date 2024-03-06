@@ -57,7 +57,7 @@ class Migrator
             );
 
             // We expect that the class name is the same as the file name.
-            $migrationClassName = str_replace( '.php', '', $migration);
+            $migrationClassName = str_replace('.php', '', $migration);
 
             require $migrationFilePath;
 
@@ -104,6 +104,4 @@ class Migrator
     {
         $this->database->write("INSERT IGNORE INTO {$this->getTableName()} (migration) VALUES ('$migration')");
     }
-
-
 }

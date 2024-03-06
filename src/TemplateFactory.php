@@ -15,7 +15,6 @@ class TemplateFactory
 {
     protected bool $showMenu = true;
     protected bool $includeDefaultMenuItems = true;
-    protected ?string $activeHrefPath = null;
 
     public function __construct(
         protected Configuration $sspConfiguration,
@@ -62,13 +61,6 @@ class TemplateFactory
     {
         $this->menu->addItem(
             $this->menu->buildItem(
-                $this->generateFullHrefPath(Routes::PATH_OVERVIEW_INDEX),
-                \SimpleSAML\Locale\Translate::noop('Overview'),
-            )
-        );
-
-        $this->menu->addItem(
-            $this->menu->buildItem(
                 $this->generateFullHrefPath(Routes::PATH_TEST_NUCLEI_SETUP),
                 \SimpleSAML\Locale\Translate::noop('Run Nuclei Test'),
             )
@@ -85,6 +77,13 @@ class TemplateFactory
             $this->menu->buildItem(
                 $this->generateFullHrefPath(Routes::PATH_METADATA_ADD),
                 \SimpleSAML\Locale\Translate::noop('Add SP Metadata'),
+            )
+        );
+
+        $this->menu->addItem(
+            $this->menu->buildItem(
+                $this->generateFullHrefPath(Routes::PATH_OVERVIEW_INDEX),
+                \SimpleSAML\Locale\Translate::noop('Module Overview'),
             )
         );
 
@@ -118,12 +117,12 @@ class TemplateFactory
 
     public function setActiveHrefPath(?string $activeHrefPath): TemplateFactory
     {
-        $this->activeHrefPath = $activeHrefPath ? $this->generateFullHrefPath($activeHrefPath) : null;
+        $this->menu->setActiveHrefPath($activeHrefPath ? $this->generateFullHrefPath($activeHrefPath) : null);
         return $this;
     }
 
     public function getActiveHrefPath(): ?string
     {
-        return $this->activeHrefPath;
+        return $this->menu->getActiveHrefPath();
     }
 }

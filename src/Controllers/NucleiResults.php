@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Controllers;
 
+use Psr\Log\LoggerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SimpleSAML\Configuration;
@@ -11,6 +12,7 @@ use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Entities\Nuclei\TestResultStatus;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
@@ -36,6 +38,7 @@ class NucleiResults
         protected MetaDataStorageHandler $metaDataStorageHandler,
         protected NucleiEnv $nucleiEnv,
         protected Helpers $helpers,
+        protected LoggerInterface $logger,
     ) {
     }
 
@@ -58,16 +61,65 @@ class NucleiResults
             $this->authorization->requireAdministrativeToken($request);
         }
 
-        $results = [];
+        $files = [];
         if (
             $selectedSpEntityId &&
             file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($selectedSpEntityId))
         ) {
-            $results = $this->helpers->filesystem()->listFilesInDirectory(
+            $files = $this->helpers->filesystem()->listFilesInDirectory(
                 $resultsDir,
                 Helpers\Filesystem::KEY_SORT_DESC,
             );
         }
+
+        $artifacts = [];
+
+        // Key by datetime
+        foreach ($files as $artifact) {
+            $elements = explode(DIRECTORY_SEPARATOR, $artifact, 2);
+
+            if (! $elements) {
+                continue;
+            }
+
+            if (isset($artifacts[$elements[0]]) && is_array($artifacts[$elements[0]])) {
+                $artifacts[$elements[0]][] =  $elements[1];
+            } else {
+                $artifacts[$elements[0]] = [$elements[1]];
+            }
+        }
+
+        // TODO mivanci move to factory
+        $latestStatus = null;
+        if (
+            $selectedSpEntityId &&
+            ($latestTimestamp = intval(key($artifacts))) &&
+            ($latestArtifacts = current($artifacts)) &&
+            is_array($latestArtifacts)
+        ) {
+            $parsedJsonResult = null;
+            if (
+                in_array(NucleiEnv::FILE_JSON_EXPORT, $latestArtifacts) &&
+                file_exists(
+                    $jsonResultPath = $this->helpers->filesystem()->getPathFromElements(
+                        $this->nucleiEnv->getSpResultsDir($selectedSpEntityId),
+                        strval($latestTimestamp),
+                        NucleiEnv::FILE_JSON_EXPORT
+                    )
+                ) &&
+                $jsonResultContent = file_get_contents($jsonResultPath)
+            ) {
+                try {
+                    $parsedJsonResult = json_decode($jsonResultContent, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\Throwable $exception) {
+                    $this->logger->error('Unable to parse exported Nuclei JSON result for ' . $selectedSpEntityId);
+                }
+            }
+
+            $latestStatus = new TestResultStatus($selectedSpEntityId, $latestTimestamp, $parsedJsonResult);
+        }
+
+//        dd($artifacts, $files, );
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
@@ -75,7 +127,8 @@ class NucleiResults
         );
         $template->data['serviceProviders'] = $serviceProviders;
         $template->data['selectedSpEntityId'] = $selectedSpEntityId;
-        $template->data['results'] = $results;
+        $template->data['artifacts'] = $artifacts;
+        $template->data['latestStatus'] = $latestStatus;
 
         return $template;
     }

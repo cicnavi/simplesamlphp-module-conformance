@@ -43,8 +43,8 @@ class Overview
             $this->helpers->shell()->replaceColorCodes(
                 trim(
                     shell_exec(
-                    "cd {$this->nucleiEnv->dataDir}; " .
-                    "nuclei --version 2>&1"
+                        "cd {$this->nucleiEnv->dataDir}; " .
+                        "nuclei --version 2>&1"
                     )
                 )
             );
