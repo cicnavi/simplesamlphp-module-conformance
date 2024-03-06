@@ -58,13 +58,20 @@
     <p>These tokens can be used for API actions on all SPs.</p>
 
     {%- if moduleConfiguration.administrativeTokens -%}
-        <table class="pure-table pure-table-bordered">
+        <table class="table pure-table pure-table-bordered">
             <thead>
             <tr><th>Value</th><th>Description</th></tr>
             </thead>
             <tbody>
             {%- for token, description in moduleConfiguration.administrativeTokens -%}
-                <tr><td>{{ token }}</td><td>{{ description }}</td></tr>
+                <tr>
+                    <td>
+                        <div>
+                            <span class="showable">{{ token|first }}...</span>
+                            <span class="hiddenable">{{ token }}</span>
+                        </div>
+                    </td>
+                    <td>{{ description }}</td></tr>
             {% endfor -%}
             </tbody>
         </table>
@@ -78,14 +85,19 @@
     <p>These tokens can be used for API actions on particular SPs.</p>
 
     {%- if moduleConfiguration.serviceProviderTokens -%}
-        <table class="pure-table pure-table-bordered">
+        <table class="table pure-table pure-table-bordered">
             <thead>
             <tr><th>Value</th><th>Service providers</th></tr>
             </thead>
             <tbody>
             {%- for token, serviceProviders in moduleConfiguration.serviceProviderTokens -%}
                 <tr>
-                    <td>{{ token }}</td>
+                    <td>
+                        <div>
+                            <span class="showable">{{ token|first }}...</span>
+                            <span class="hiddenable">{{ token }}</span>
+                        </div>
+                    </td>
                     <td>
                         {% for sp in serviceProviders %}
                             {{ sp }}<br>

@@ -204,3 +204,13 @@ button:disabled {
     color: #333;
     padding: 8px 16px;
 }
+
+/* Classes to show / hide texts on mouse hover.*/
+.showable { display: block; }
+.hiddenable { display: none; }
+div:hover > .hiddenable { display: block; }
+div:hover > .showable { display: none; }
+
+table.table td {
+    min-width: 10em;
+}
