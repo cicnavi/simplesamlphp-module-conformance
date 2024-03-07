@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use SimpleSAML\Configuration;
 use SimpleSAML\Database;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 
@@ -40,40 +41,51 @@ class Migrator
             ->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    /**
-     * @return string[]
-     */
     public function getNonImplementedMigrations(): array
     {
         return array_diff($this->getAllMigrations(), $this->getImplementedMigrations());
     }
 
+    /**
+     * @throws ConformanceException
+     */
     public function runNonImplementedMigrations(): void
     {
+        /** @var string $migration */
         foreach ($this->getNonImplementedMigrations() as $migration) {
             $migrationFilePath = $this->helpers->filesystem()->getPathFromElements(
                 $this->getMigrationsDirectory(),
                 $migration,
             );
 
-            // We expect that the class name is the same as the file name.
-            $migrationClassName = str_replace('.php', '', $migration);
+            if (!file_exists($migrationFilePath)) {
+                throw new ConformanceException('Invalid migration file path: ' . $migrationFilePath);
+            }
 
             require $migrationFilePath;
+
+            // We expect that the class name is the same as the file name.
+            $migrationClassName = str_replace('.php', '', $migration);
 
             if (! is_subclass_of($migrationClassName, AbstractMigration::class, true)) {
                 $this->logger->warning("Migration $migration is not instance of AbstractMigration, skipping.");
                 continue;
             }
 
-            /** @var AbstractMigration $migrationInstance */
-            $migrationInstance = (new ReflectionClass($migrationClassName))
-                ->newInstance(
-                    $this->sspConfig,
-                    $this->moduleConfiguration,
-                    $this->database,
-                    $this->helpers,
+            try {
+                $migrationInstance = (new ReflectionClass($migrationClassName))
+                    ->newInstance(
+                        $this->sspConfig,
+                        $this->moduleConfiguration,
+                        $this->database,
+                        $this->helpers,
+                    );
+            } catch (\ReflectionException $exception) {
+                throw new ConformanceException(
+                    'Could not create migration class instance, error was: ' .
+                    $exception->getMessage()
                 );
+            }
 
             $migrationInstance->run();
             $this->markImplementedMigration($migration);

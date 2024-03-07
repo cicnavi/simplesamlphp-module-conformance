@@ -23,7 +23,7 @@ function conformance_hook_configpage(Template &$template): void
     }
 
     $template->data[$dataLinksKey][] = [
-        'href' => $moduleRoutesHelper->getUrl(Routes::PATH_TEST_NUCLEI_SETUP),
+        'href' => $moduleRoutesHelper->getUrl(Routes::PATH_OVERVIEW_INDEX),
         'text' => Translate::noop('Conformance'),
     ];
 

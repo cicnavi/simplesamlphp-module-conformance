@@ -10,6 +10,9 @@ use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 
+/**
+ * @psalm-suppress PossiblyUnusedProperty
+ */
 abstract class AbstractMigration
 {
     public function __construct(

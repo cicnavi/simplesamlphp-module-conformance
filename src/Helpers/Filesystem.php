@@ -38,6 +38,9 @@ class Filesystem
         return implode(DIRECTORY_SEPARATOR, $elements);
     }
 
+    /**
+     * @return string[]
+     */
     public function listFilesInDirectory(
         string $directory,
         string $sortOrder = self::KEY_SORT_ASC,

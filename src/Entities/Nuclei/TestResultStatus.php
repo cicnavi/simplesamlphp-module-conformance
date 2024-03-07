@@ -6,6 +6,9 @@ namespace SimpleSAML\Module\conformance\Entities\Nuclei;
 
 use SimpleSAML\Module\conformance\NucleiEnv;
 
+/**
+ * @psalm-suppress PossiblyUnusedProperty
+ */
 class TestResultStatus
 {
     public function __construct(
@@ -38,16 +41,23 @@ class TestResultStatus
         }
 
         if (empty($this->parsedJsonResult)) {
-            return 'All tests passed.';
+            return 'Passed without findings.';
         }
 
         $extractedResults = [];
+        /** @var array $item */
         foreach ($this->parsedJsonResult as $item) {
             if (isset($item['extracted-results']) && is_array($item['extracted-results'])) {
                 $extractedResults = array_unique(array_merge($extractedResults, $item['extracted-results']));
             }
         }
 
-        return 'Found issues related to following tests: ' . implode(', ', $extractedResults);
+        // Make sure we only have strings as values
+        array_walk($extractedResults, function (mixed &$value) {
+            $value = (string)$value;
+        });
+
+        /** @var string[] $extractedResults */
+        return 'Found issues related to tests: ' . implode(', ', $extractedResults);
     }
 }

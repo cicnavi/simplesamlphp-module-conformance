@@ -39,15 +39,15 @@ class Overview
     {
         $status = $this->genericStatusFactory->fromRequest($request);
 
-        $nucleiStatus =
-            $this->helpers->shell()->replaceColorCodes(
-                trim(
-                    shell_exec(
-                        "cd {$this->nucleiEnv->dataDir}; " .
-                        "nuclei --version 2>&1"
-                    )
-                )
-            );
+        /** @psalm-suppress ForbiddenCode */
+        $nucleiStatus = shell_exec(
+            "cd {$this->nucleiEnv->dataDir}; " .
+            "nuclei --version 2>&1"
+        );
+
+        $nucleiStatus = $nucleiStatus ?
+            $this->helpers->shell()->replaceColorCodes(trim($nucleiStatus)) :
+            null;
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':overview/index.twig',

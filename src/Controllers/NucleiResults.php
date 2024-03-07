@@ -78,11 +78,11 @@ class NucleiResults
         foreach ($files as $artifact) {
             $elements = explode(DIRECTORY_SEPARATOR, $artifact, 2);
 
-            if (! $elements) {
+            if (count($elements) !== 2) {
                 continue;
             }
 
-            if (isset($artifacts[$elements[0]]) && is_array($artifacts[$elements[0]])) {
+            if (isset($artifacts[$elements[0]])) {
                 $artifacts[$elements[0]][] =  $elements[1];
             } else {
                 $artifacts[$elements[0]] = [$elements[1]];
@@ -91,10 +91,11 @@ class NucleiResults
 
         // TODO mivanci move to factory
         $latestStatus = null;
+        $latestTimestamp = key($artifacts);
+        $latestArtifacts = current($artifacts);
         if (
             $selectedSpEntityId &&
-            ($latestTimestamp = intval(key($artifacts))) &&
-            ($latestArtifacts = current($artifacts)) &&
+            (!is_null($latestTimestamp)) &&
             is_array($latestArtifacts)
         ) {
             $parsedJsonResult = null;
@@ -110,13 +111,14 @@ class NucleiResults
                 $jsonResultContent = file_get_contents($jsonResultPath)
             ) {
                 try {
+                    /** @var array $parsedJsonResult */
                     $parsedJsonResult = json_decode($jsonResultContent, true, 512, JSON_THROW_ON_ERROR);
                 } catch (\Throwable $exception) {
                     $this->logger->error('Unable to parse exported Nuclei JSON result for ' . $selectedSpEntityId);
                 }
             }
 
-            $latestStatus = new TestResultStatus($selectedSpEntityId, $latestTimestamp, $parsedJsonResult);
+            $latestStatus = new TestResultStatus($selectedSpEntityId, intval($latestTimestamp), $parsedJsonResult);
         }
 
 //        dd($artifacts, $files, );
