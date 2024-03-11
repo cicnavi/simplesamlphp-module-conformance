@@ -95,7 +95,7 @@ class NucleiTest
         // We have trusted SP. Handle consent if needed.
         if (
             $this->spConsentHandler->shouldValidateConsentForSp($spEntityId) &&
-            ! $this->spConsentHandler->isConsentedForSp($spEntityId)
+            (! $this->spConsentHandler->isConsentedForSp($spEntityId))
         ) {
             $message = 'SP consent is required to run tests. ';
             if (! $this->spConsentHandler->isRequestedForSp($spEntityId)) {

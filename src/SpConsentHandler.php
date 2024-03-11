@@ -36,7 +36,7 @@ class SpConsentHandler
 
     public function shouldValidateConsentForSp(string $spEntityId): bool
     {
-        return ($this->moduleConfiguration->shouldAcquireSpConsentBeforeTests()) ||
+        return ($this->moduleConfiguration->shouldAcquireSpConsentBeforeTests()) &&
             (!in_array($spEntityId, $this->moduleConfiguration->getSpsWIthOverriddenConsents()));
     }
 
