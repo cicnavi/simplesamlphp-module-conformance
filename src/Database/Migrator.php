@@ -67,8 +67,10 @@ class Migrator
             // We expect that the class name is the same as the file name.
             $migrationClassName = str_replace('.php', '', $migration);
 
-            if (! is_subclass_of($migrationClassName, AbstractMigration::class, true)) {
-                $this->logger->warning("Migration $migration is not instance of AbstractMigration, skipping.");
+            if (! is_subclass_of($migrationClassName, AbstractDbEntity::class, true)) {
+                $this->logger->warning(
+                    "Migration $migration is not instance of " . AbstractDbEntity::class . ", skipping."
+                );
                 continue;
             }
 
@@ -85,6 +87,13 @@ class Migrator
                     'Could not create migration class instance, error was: ' .
                     $exception->getMessage()
                 );
+            }
+
+            if (! is_a($migrationInstance, MigrationInterface::class)) {
+                $this->logger->warning(
+                    "Migration $migration does not implement " . MigrationInterface::class . ", skipping."
+                );
+                continue;
             }
 
             $migrationInstance->run();

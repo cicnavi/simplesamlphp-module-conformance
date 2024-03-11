@@ -4,16 +4,14 @@ namespace SimpleSAML\Test\Module\conformance;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
-use SimpleSAML\Module\conformance\GenericStatus;
-use SimpleSAML\Module\conformance\GenericStatusFactory;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\InputBag;
+use SimpleSAML\Module\conformance\GenericStatus;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ServerBag;
 
 /**
- * @covers \SimpleSAML\Module\conformance\GenericStatusFactory
+ * @covers \SimpleSAML\Module\conformance\Factories\GenericStatusFactory
  * @uses \SimpleSAML\Module\conformance\GenericStatus
  */
 class GenericStatusFactoryTest extends TestCase
@@ -31,9 +29,9 @@ class GenericStatusFactoryTest extends TestCase
         $this->requestMock->query = $this->inputBagMock;
     }
 
-    protected function mocked(): GenericStatusFactory
+    protected function mocked(): \SimpleSAML\Module\conformance\Factories\GenericStatusFactory
     {
-        return new GenericStatusFactory();
+        return new \SimpleSAML\Module\conformance\Factories\GenericStatusFactory();
     }
 
     public function testCanCreateGenericStatus(): void

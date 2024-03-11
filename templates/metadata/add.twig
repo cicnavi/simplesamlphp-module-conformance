@@ -9,14 +9,6 @@
         available SP metadata in the standard administration area of SimpleSAMLphp.
     </p>
 
-    {% if status is not null %}
-        <div class="code-box">
-            <div class="code-box-content">
-                <pre id="" class="">{{ status|escape|upper }}: {{ message|escape }}</pre>
-            </div>
-        </div>
-    {% endif -%}
-
     <form method="post" class="pure-form" enctype="multipart/form-data" action="{{ moduleURL('conformance/metadata/persist') }}">
         <input type="hidden" name="fromUi" value="1">
         <div class="pure-control-group">

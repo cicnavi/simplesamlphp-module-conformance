@@ -56,3 +56,15 @@ conformance-nuclei-results-download:
   controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::download
   methods:
     - GET
+
+conformance-sp-consents-index:
+  path: /sp-consents
+  controller: SimpleSAML\Module\conformance\Controllers\SpConsent::index
+  methods:
+    - GET
+
+conformance-sp-consents-verify-challenge:
+  path: /sp-consents/verify-challenge
+  controller: SimpleSAML\Module\conformance\Controllers\SpConsent::verifyChallenge
+  methods:
+    - GET

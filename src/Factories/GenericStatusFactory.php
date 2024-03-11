@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance;
+namespace SimpleSAML\Module\conformance\Factories;
 
+use SimpleSAML\Module\conformance\GenericStatus;
 use Symfony\Component\HttpFoundation\Request;
 
 class GenericStatusFactory

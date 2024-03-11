@@ -1,0 +1,25 @@
+<style type="text/css">
+body {
+    font-family: sans-serif;
+}
+ul {
+    list-style: none;
+    padding-left: 1em;
+}
+p {
+    white-space: pre-line;
+}
+</style>
+<h1>{{ subject }}</h1>
+
+<p>{{ text }}</p>
+
+<h2>{{ 'SP Entity ID:'|trans }}</h2>
+<ul>
+    <li><pre>{{ data.spEntityId|first }}</pre></li>
+</ul>
+
+<h2>{{ 'To accept, navigate to:'|trans }}</h2>
+<ul>
+    <li><a href="{{ data.challengeUrl|first }}" target="_blank">{{ data.challengeUrl|first }}</a></li>
+</ul>

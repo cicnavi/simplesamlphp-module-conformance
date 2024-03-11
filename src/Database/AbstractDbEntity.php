@@ -13,7 +13,7 @@ use SimpleSAML\Module\conformance\ModuleConfiguration;
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
-abstract class AbstractMigration
+abstract class AbstractDbEntity
 {
     public function __construct(
         protected Configuration $sspConfig,
@@ -23,12 +23,7 @@ abstract class AbstractMigration
     ) {
     }
 
-    /**
-     * @throws ConformanceException
-     */
-    abstract public function run(): void;
-
-    abstract public function getTableName(): string;
+    abstract public static function getTableName(): string;
 
     public function getPrefixedTableName(): string
     {
@@ -36,5 +31,10 @@ abstract class AbstractMigration
             $this->moduleConfiguration->getDatabaseTableNamesPrefix(),
             $this->getTableName(),
         );
+    }
+
+    protected function noop(string $val): string
+    {
+        return $val;
     }
 }

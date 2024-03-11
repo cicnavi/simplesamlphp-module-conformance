@@ -11,11 +11,11 @@ use SimpleSAML\Metadata\MetaDataStorageHandlerPdo;
 use SimpleSAML\Module;
 use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
-use SimpleSAML\Module\conformance\GenericStatusFactory;
-use SimpleSAML\Module\conformance\ModuleConfiguration;
+use SimpleSAML\Module\conformance\Factories\GenericStatusFactory;
+use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\GenericStatus;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\SspBridge;
-use SimpleSAML\Module\conformance\TemplateFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -48,11 +48,11 @@ class Metadata
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':metadata/add.twig',
             Module\conformance\Helpers\Routes::PATH_METADATA_ADD,
+            $status
         );
 
         $template->data += [
             'xmlData' => null,
-            ...$status->toArray(),
         ];
 
         return $template;

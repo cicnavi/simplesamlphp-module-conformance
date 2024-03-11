@@ -25,6 +25,9 @@ class ModuleConfiguration
     final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
     final public const OPTION_LOCAL_TEST_RUNNER_TOKEN = 'local-test-runner-token';
     final public const OPTION_DATABASE_TABLE_NAMES_PREFIX = 'database-table-name-prefix';
+    final public const OPTION_SHOULD_ACQUIRE_SP_CONSENT_BEFORE_TESTS = 'should-acquire-sp-consent-before-tests';
+    final public const OPTION_SPS_WITH_OVERRIDDEN_CONSENTS = 'sps-with-overridden-consents';
+    final public const OPTION_SP_CONSENT_CHALLENGE_TTL = 'sp-consent-challenge-ttl';
 
     /**
      * Contains configuration from module configuration file.
@@ -144,5 +147,26 @@ class ModuleConfiguration
     public function getDatabaseTableNamesPrefix(): string
     {
         return $this->getConfig()->getOptionalString(self::OPTION_DATABASE_TABLE_NAMES_PREFIX, 'cnfrmnc_');
+    }
+
+    public function shouldAcquireSpConsentBeforeTests(): bool
+    {
+        return $this->getConfig()->getOptionalBoolean(self::OPTION_SHOULD_ACQUIRE_SP_CONSENT_BEFORE_TESTS, true);
+    }
+
+    public function getSpsWIthOverriddenConsents(): array
+    {
+        return $this->getConfig()->getOptionalArray(self::OPTION_SPS_WITH_OVERRIDDEN_CONSENTS, []);
+    }
+
+    public function getSpConsentChallengeTimeToLive(): int
+    {
+        $defaultTtl = 48 * 60 * 60;
+        return $this->getConfig()->getOptionalIntegerRange(
+            self::OPTION_SP_CONSENT_CHALLENGE_TTL,
+            60,
+            $defaultTtl,
+            $defaultTtl
+        );
     }
 }

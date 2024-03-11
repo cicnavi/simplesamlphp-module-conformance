@@ -21,6 +21,15 @@
 
         <div class="content">
             <h3>{{ subPageTitle }}</h3>
+
+            {% if genericStatus and genericStatus is not null and genericStatus.status is not null %}
+                <div class="code-box">
+                    <div class="code-box-content">
+                        <pre id="" class="">{{ genericStatus.status|escape|upper }}: {{ genericStatus.message|escape }}</pre>
+                    </div>
+                </div>
+            {% endif -%}
+
             {% block conformanceContent %}{% endblock %}
         </div>
     </div>
