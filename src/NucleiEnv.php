@@ -86,6 +86,7 @@ class NucleiEnv
             "mkdir -p $spTestResultsDir; " .
             "nuclei -target $target " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
+            "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-templates {$this->getTemplatesPath()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONSUMER_URL=$acsUrl " .
@@ -114,6 +115,7 @@ class NucleiEnv
         $command .=
             "nuclei -target $target " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
+            "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-templates {$this->getTemplatesPath()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONSUMER_URL=$acsUrl " .

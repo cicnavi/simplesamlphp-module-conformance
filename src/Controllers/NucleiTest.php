@@ -9,14 +9,14 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Authorization;
-use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\NucleiEnv;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
+use SimpleSAML\Module\conformance\SpConsentHandler;
 use SimpleSAML\Module\conformance\SspBridge;
-use SimpleSAML\Module\conformance\TemplateFactory;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,6 +40,7 @@ class NucleiTest
         protected Authorization $authorization,
         protected MetaDataStorageHandler $metaDataStorageHandler,
         protected NucleiEnv $nucleiEnv,
+        protected SpConsentHandler $spConsentHandler,
         protected LoggerInterface $logger,
     ) {
     }
@@ -88,6 +89,27 @@ class NucleiTest
         } catch (\Throwable $exception) {
             return new StreamedResponse(function () {
                 echo 'No metadata for provided SP.';
+            });
+        }
+
+        // We have trusted SP. Handle consent if needed.
+        if (
+            $this->spConsentHandler->shouldValidateConsentForSp($spEntityId) &&
+            ! $this->spConsentHandler->isConsentedForSp($spEntityId)
+        ) {
+            $message = 'SP consent is required to run tests. ';
+            if (! $this->spConsentHandler->isRequestedForSp($spEntityId)) {
+                try {
+                    $this->spConsentHandler->requestForSp($spEntityId, $spMetadata->toArray());
+                    $message .= 'Request for consent has now been sent.';
+                } catch (\Throwable $exception) {
+                    $message .= 'Error requesting consent: ' . $exception->getMessage();
+                }
+            } else {
+                $message .= 'Consent has already been requested, but still not accepted.';
+            }
+            return new StreamedResponse(function () use ($message) {
+                echo $message;
             });
         }
 

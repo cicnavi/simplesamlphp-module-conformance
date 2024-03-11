@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance;
+namespace SimpleSAML\Module\conformance\Factories;
 
 use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\GenericStatus;
 use SimpleSAML\Module\conformance\Helpers\Routes;
+use SimpleSAML\Module\conformance\Menu;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\XHTML\Template;
 
 class TemplateFactory
@@ -77,6 +80,13 @@ class TemplateFactory
             $this->menu->buildItem(
                 $this->generateFullHrefPath(Routes::PATH_METADATA_ADD),
                 \SimpleSAML\Locale\Translate::noop('Add SP Metadata'),
+            )
+        );
+
+        $this->menu->addItem(
+            $this->menu->buildItem(
+                $this->generateFullHrefPath(Routes::PATH_SP_CONSENTS_INDEX),
+                \SimpleSAML\Locale\Translate::noop('SP Consents'),
             )
         );
 

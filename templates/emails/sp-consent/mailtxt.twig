@@ -1,0 +1,11 @@
+{% autoescape false %}
+# {{ subject }}
+
+{{ text }}
+
+## {{ 'SP Entity ID:'|trans }}
+- {{ data.spEntityId|first }}
+
+## {{ 'To accept, navigate to:'|trans }}
+- {{ data.challengeUrl|first }}
+{% endautoescape %}

@@ -49,4 +49,19 @@ $config = [
      * Prefix to apply to DB tables names related to the conformance module.
      */
     ModuleConfiguration::OPTION_DATABASE_TABLE_NAMES_PREFIX => 'cnfrmnc_',
+
+    /**
+     * Choose if the consent should be acquired before any tests are run for all service providers.
+     * If true, before the test, the test runner will check if the consent is acquired for particular SP.
+     * If not, it will aks for a consent by sending an email with a consent challenge to the service provider contacts.
+     */
+    ModuleConfiguration::OPTION_SHOULD_ACQUIRE_SP_CONSENT_BEFORE_TESTS => true,
+
+    /**
+     * If you want to run tests for particular service providers without requesting them for consent, note it here.
+     */
+    ModuleConfiguration::OPTION_SPS_WITH_OVERRIDDEN_CONSENTS => [
+        // 'sp-entity-id',
+    ],
+
 ];

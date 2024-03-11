@@ -29,7 +29,6 @@
 
     {% if latestStatus %}
         <h4>Latest test from {{ latestStatus.timestamp|date }}</h4>
-        <br>
         <ul>
             <li><strong>Status:</strong> {{ latestStatus.isOk ? 'OK' : 'FAILING' }}</li>
             <li><strong>Description:</strong> {{ latestStatus.description }}</li>
@@ -38,7 +37,6 @@
       <br>
       <h4>Artifacts from all tests</h4>
       {% for timestamp, entries in artifacts %}
-        <br>
         <span>{{ timestamp|date }}</span>
         <hr>
         <br>

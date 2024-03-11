@@ -10,6 +10,7 @@ use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\Helpers\Shell;
 use SimpleSAML\Module\conformance\Helpers\State;
+use SimpleSAML\Module\conformance\Helpers\Str;
 
 class Helpers
 {
@@ -20,6 +21,7 @@ class Helpers
 
     protected static ?Database $database = null;
     protected static ?Shell $shell = null;
+    protected static ?Str $str = null;
 
     public function arr(): Arr
     {
@@ -48,5 +50,10 @@ class Helpers
     public function shell(): Shell
     {
         return self::$shell ??= new Shell();
+    }
+
+    public function str(): Str
+    {
+        return self::$str ??= new Str();
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\SspBridge;
 
+use SimpleSAML\Utils\EMail;
 use SimpleSAML\Utils\HTTP;
 use SimpleSAML\Utils\Auth;
 use SimpleSAML\Utils\XML;
