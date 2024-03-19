@@ -51,6 +51,10 @@
             "vendor/bin/phpcs -p",
             "vendor/bin/psalm",
             "vendor/bin/phpunit"
+        ],
+        "post-install-cmd": [
+            "git clone https://gitlab.software.geant.org/TI_Incubator/sp_nuclei_tests.git public/nuclei",
+            "mv public/nuclei/nuclei-templates public/nuclei/templates"
         ]
     }
 }

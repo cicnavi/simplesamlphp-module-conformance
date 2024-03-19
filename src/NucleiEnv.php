@@ -26,7 +26,6 @@ class NucleiEnv
     public readonly string $publicDir;
     public readonly string $templatesDir;
     public readonly string $conformanceIdpBaseUrl;
-    public readonly string $conformanceIdpHostname;
     public readonly int $numberOfResultsToKeepPerSp;
 
     public bool $enableDebug = true;
@@ -54,8 +53,6 @@ class NucleiEnv
         $this->templatesDir = $this->publicDir . DIRECTORY_SEPARATOR . 'templates';
         $this->conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
             $this->sspBridge->utils()->http()->getBaseURL();
-        $this->conformanceIdpHostname = $this->moduleConfiguration->getConformanceIdpHostname() ??
-            $this->sspBridge->utils()->http()->getSelfHost();
         $this->numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
     }
 
@@ -64,19 +61,18 @@ class NucleiEnv
      */
     public function prepareCommand(
         string $spEntityId,
-        string $target,
         string $ascUrl,
         string $token,
         string $testId = null,
     ): string {
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
-        $fileName = $this->helpers->filesystem()->cleanFilename($spEntityId);
+        $screenshotsDir = escapeshellarg(rtrim($spTestResultsDir . '/') . '/pictures/');
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
         $target = escapeshellarg($target);
         $acsUrl = escapeshellarg($ascUrl);
-        $token = escapeshellarg($token);
+        $authorization = escapeshellarg("Bearer $token");
         $testId = empty($testId) ? null : escapeshellarg($testId);
 
         // First use the raw HTTP template to run the tests.
@@ -84,17 +80,14 @@ class NucleiEnv
 
         $command =
             "mkdir -p $spTestResultsDir; " .
-            "nuclei -target $target " .
+            "nuclei -target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-templates {$this->getTemplatesPath()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
-            "-var CONSUMER_URL=$acsUrl " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
-            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
-            "-var FILENAME=$fileName " .
-            "-var TOKEN=$token " .
+            "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
+            "-var AUTHORIZATION=$authorization " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
             ($this->enableJsonExport ? "-json-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_JSON_EXPORT)} " : '') .
@@ -113,17 +106,14 @@ class NucleiEnv
 
         // Currently no result exports because of the false positive matches with headless browser.
         $command .=
-            "nuclei -target $target " .
+            "nuclei -target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-templates {$this->getTemplatesPath()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
-            "-var CONSUMER_URL=$acsUrl " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
-            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
-            "-var FILENAME=$fileName " .
-            "-var TOKEN=$token " .
+            "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
+            "-var AUTHORIZATION=$authorization " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableDebug ? '-debug ' : '') .
             ($this->enableVerbose ? '-verbose ' : '') .
