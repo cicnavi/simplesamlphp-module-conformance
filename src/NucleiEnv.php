@@ -81,7 +81,7 @@ class NucleiEnv
             "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
+            "-var SCREENSHOTS_DIR=$screenshotsDir " .
             "-var AUTHORIZATION=$authorization " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
@@ -107,7 +107,7 @@ class NucleiEnv
             "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
+            "-var SCREENSHOTS_DIR=$screenshotsDir " .
             "-var AUTHORIZATION=$authorization " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableDebug ? '-debug ' : '') .
