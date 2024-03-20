@@ -5,6 +5,7 @@
     <file>src</file>
     <file>tests</file>
     <file>public</file>
+    <file>migrations</file>
 
     <!-- Use this to exclude paths. You can have multiple patterns -->
     <!--<exclude-pattern>*/tests/*</exclude-pattern>-->
@@ -13,5 +14,12 @@
 
     <!-- This is the rule we inherit from. If you want to exlude some specific rules, see the docs on how to do that -->
     <rule ref="PSR12"/>
+
+    <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+        <exclude-pattern>migrations</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
+        <exclude-pattern>migrations</exclude-pattern>
+    </rule>
 </ruleset>
 

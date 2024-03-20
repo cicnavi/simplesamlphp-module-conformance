@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 class SpConsent
 {
     final public const KEY_CHALLENGE = 'challenge';
+    final public const KEY_CONTACT_EMAIL = 'contact_email';
 
     public function __construct(
         protected Configuration $sspConfig,
@@ -72,20 +73,28 @@ class SpConsent
         $spEntityId = $spEntityId ? (string)$spEntityId : null;
         $challenge = $request->query->get(self::KEY_CHALLENGE);
         $challenge = $challenge ? (string)$challenge : null;
+        $contactEmail = $request->query->get(self::KEY_CONTACT_EMAIL);
+        $contactEmail = $contactEmail ? (string)$contactEmail : null;
 
         $status = $this->genericStatusFactory->fromRequest($request);
 
-        if (empty($spEntityId) || empty($challenge)) {
+        if (empty($spEntityId) || empty($challenge) || empty($contactEmail)) {
             $status->setStatusError()->setMessage('Missing required parameters.');
+        } elseif (! $this->spConsentHandler->shouldValidateConsentForSp($spEntityId)) {
+            $status->setStatusError()->setMessage('SP consent not required.');
+        } elseif ($this->spConsentHandler->isConsentedForSp($spEntityId)) {
+            $status->setStatusError()->setMessage('SP consent already acquired.');
         } else {
-            $consentRequest = $this->spConsentHandler->getSpConsentRequest($spEntityId);
+            $consentRequest = $this->spConsentHandler->getSpConsentRequest($spEntityId, $contactEmail);
             if (is_null($consentRequest)) {
                 $status->setStatusError()->setMessage('SP consent not requested.');
             } elseif (
-                isset($consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE]) &&
-                (string)$consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE] === $challenge
+                (isset($consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE]) &&
+                    (string)$consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE] === $challenge) &&
+                (isset($consentRequest[SpConsentRequestRepository::COLUMN_CONTACT_EMAIL]) &&
+                    (string)$consentRequest[SpConsentRequestRepository::COLUMN_CONTACT_EMAIL] === $contactEmail)
             ) {
-                $this->spConsentHandler->addConsent($spEntityId);
+                $this->spConsentHandler->addConsent($spEntityId, $contactEmail);
                 $status->setStatusOk()->setMessage('SP consent added.');
             } else {
                 $status->setStatusError()->setMessage('Could not verify challenge.');
