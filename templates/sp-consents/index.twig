@@ -18,7 +18,7 @@
             <h4>SPs for which the consent requirement has been overridden in module configuration.</h4>
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP</th></tr>
+                <tr><th>SP Entity ID</th></tr>
                 </thead>
                 <tbody>
                 {%- for spEntityID in overridden -%}
@@ -32,11 +32,15 @@
         {% if consented %}
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP</th><th>Date</th></tr>
+                <tr><th>SP Entity ID</th><th>From contact email</th><th>Date</th></tr>
                 </thead>
                 <tbody>
                 {%- for sp in consented -%}
-                    <tr><td>{{ sp.entity_id }}</td><td>{{ sp.created_at|date }}</td></tr>
+                    <tr>
+                        <td>{{ sp.entity_id }}</td>
+                        <td>{{ sp.contact_email }}</td>
+                        <td>{{ sp.created_at|date }}</td>
+                    </tr>
                 {% endfor -%}
                 </tbody>
             </table>
@@ -48,11 +52,15 @@
         {% if requested %}
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP Entity ID</th><th>Date</th></tr>
+                <tr><th>SP Entity ID</th><th>Contact email</th><th>Date</th></tr>
                 </thead>
                 <tbody>
                 {%- for sp in requested -%}
-                    <tr><td>{{ sp.entity_id }}</td><td>{{ sp.created_at|date }}</td></tr>
+                    <tr>
+                        <td>{{ sp.entity_id }}</td>
+                        <td>{{ sp.contact_email }}</td>
+                        <td>{{ sp.created_at|date }}</td>
+                    </tr>
                 {% endfor -%}
                 </tbody>
             </table>
