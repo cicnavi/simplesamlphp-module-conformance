@@ -12,6 +12,7 @@
         <directory name="src" />
         <directory name="config-templates" />
         <directory name="public" />
+        <directory name="migrations" />
 
         <ignoreFiles>
             <directory name="vendor" />
