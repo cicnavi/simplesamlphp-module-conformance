@@ -65,10 +65,20 @@ class NucleiEnv
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
-        $target = escapeshellarg($target);
         $acsUrl = escapeshellarg($ascUrl);
-        $authorization = escapeshellarg("Bearer $token");
+        $conformanceIdPHostname = parse_url($this->conformanceIdpBaseUrl, PHP_URL_HOST);
+        $nucleiSecretFile = <<<HEREDOC
+static:
+  - type: bearertoken
+    domains:
+      - $conformanceIdPHostname
+    token: $token
+HEREDOC;
+        $nucleiSecretFilePath = tempnam(sys_get_temp_dir(), hash('sha256', $spEntityId));
+        file_put_contents($nucleiSecretFilePath, $nucleiSecretFile);
+        $nucleiSecretFilePath = escapeshellarg($nucleiSecretFilePath);
         $testId = empty($testId) ? null : escapeshellarg($testId);
+        $bearerToken = escapeshellarg($token);
 
         // First use the raw HTTP template to run the tests.
         $this->templateId = self::NUCLEI_TEMPLATE_SAML_RAW_ALL;
@@ -82,7 +92,7 @@ class NucleiEnv
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var SCREENSHOTS_DIR=$screenshotsDir " .
-            "-var AUTHORIZATION=$authorization " .
+            "-secret-file $nucleiSecretFilePath " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
             ($this->enableJsonExport ? "-json-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_JSON_EXPORT)} " : '') .
@@ -108,7 +118,7 @@ class NucleiEnv
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var SCREENSHOTS_DIR=$screenshotsDir " .
-            "-var AUTHORIZATION=$authorization " .
+            "-var BEARER_TOKEN=$bearerToken " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableDebug ? '-debug ' : '') .
             ($this->enableVerbose ? '-verbose ' : '') .
@@ -118,6 +128,7 @@ class NucleiEnv
 
         // Cleanup part of the tests.
         $command .=
+            "rm $nucleiSecretFilePath; " . # remove nuclei secret file
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
             "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
