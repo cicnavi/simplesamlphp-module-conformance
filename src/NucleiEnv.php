@@ -11,7 +11,6 @@ use SimpleSAML\Module\conformance\Errors\ConformanceException;
 class NucleiEnv
 {
     public const KEY_NUCLEI = 'nuclei';
-    public const KEY_TEMPLATE_EXTENSION = '.yaml';
 
     public const FILE_OUTPUT_EXPORT = 'output.txt';
     public const FILE_FINDINGS_EXPORT = 'findings.txt';
@@ -21,10 +20,9 @@ class NucleiEnv
     public const DIR_MARKDOWN_EXPORT = 'markdown';
     public const NUCLEI_TEMPLATE_SAML_RAW_ALL = 'saml-raw-all';
     public const NUCLEI_TEMPLATE_SAML_HEADLESS_ALL = 'saml-headless-all';
+    public const NUCLEI_TEMPLATES = [self::NUCLEI_TEMPLATE_SAML_RAW_ALL, self::NUCLEI_TEMPLATE_SAML_HEADLESS_ALL];
 
     public readonly string $dataDir;
-    public readonly string $publicDir;
-    public readonly string $templatesDir;
     public readonly string $conformanceIdpBaseUrl;
     public readonly int $numberOfResultsToKeepPerSp;
 
@@ -48,9 +46,6 @@ class NucleiEnv
         $this->dataDir = (
             $this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir()
         ) . self::KEY_NUCLEI;
-        $this->publicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
-            DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
-        $this->templatesDir = $this->publicDir . DIRECTORY_SEPARATOR . 'templates';
         $this->conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
             $this->sspBridge->utils()->http()->getBaseURL();
         $this->numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
@@ -83,7 +78,7 @@ class NucleiEnv
             "nuclei -target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
-            "-templates {$this->getTemplatesPath()} " .
+            "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
@@ -109,7 +104,7 @@ class NucleiEnv
             "nuclei -target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
-            "-templates {$this->getTemplatesPath()} " .
+            "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
             "-var RESULT_OUTPUT_DIR=$screenshotsDir " .
@@ -152,19 +147,21 @@ class NucleiEnv
      */
     public function setTemplateId(string $templateId): NucleiEnv
     {
-        if (
-            file_exists($this->templatesDir . DIRECTORY_SEPARATOR . $templateId . self::KEY_TEMPLATE_EXTENSION)
-        ) {
+        if (in_array($templateId, self::NUCLEI_TEMPLATES)) {
             $this->templateId = $templateId;
             return $this;
         }
-
         throw new ConformanceException('Invalid Nuclei template ID provided.');
     }
 
-    public function getTemplatesPath(): string
+    private function getTemplatesURL(): string
     {
-        return $this->templatesDir . DIRECTORY_SEPARATOR .
-            ($this->templateId ? $this->templateId . self::KEY_TEMPLATE_EXTENSION : '');
+        $templates = $this->templateId ? [$this->templateId] : self::NUCLEI_TEMPLATES;
+        return implode(',', array_map(function ($templateId){
+            return sprintf(
+                "https://gitlab.software.geant.org/TI_Incubator/sp_nuclei_tests/-/raw/main/nuclei-templates/%s.yaml",
+                $templateId
+            );
+        }, $templates));
     }
 }
