@@ -119,7 +119,9 @@ HEREDOC;
 
         // Currently no result exports because of the false positive matches with headless browser.
         $command .=
-            "nuclei -target $acsUrl " .
+            "nuclei " .
+            "-config {$this->configFile} " .
+            "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-template-url {$this->getTemplatesURL()} " .
