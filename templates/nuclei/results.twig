@@ -39,7 +39,6 @@
       {% for timestamp, entries in artifacts %}
         <span>{{ timestamp|date }}</span>
         <hr>
-        <br>
         <ul>
           {% for entry in entries %}
           <li>
@@ -49,6 +48,8 @@
           </li>
           {% endfor %}
         </ul>
+
+        <br>
       {% endfor %}
     {% elseif selectedSpEntityId %}
       <p>

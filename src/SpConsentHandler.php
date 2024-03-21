@@ -61,7 +61,6 @@ class SpConsentHandler
      */
     public function requestForSp(string $spEntityId, array $spMetadata): void
     {
-        $challenge = $this->spConsentRequestsRepository->generate($spEntityId);
 
         $contactEmails = $this->resolveProviderContactEmails($spMetadata);
 
@@ -69,16 +68,22 @@ class SpConsentHandler
             throw new SpConsentException('No contact emails available for SP ' . $spEntityId);
         }
 
-        $challengeUrl = $this->helpers->routes()->getUrl(
-            Routes::PATH_SP_CONSENTS_VERIFY_CHALLENGE,
-            ModuleConfiguration::MODULE_NAME,
-            [Conformance::KEY_SP_ENTITY_ID => $spEntityId, SpConsent::KEY_CHALLENGE => $challenge]
-        );
-
         $failedEmails = [];
         $errors = [];
         foreach ($contactEmails as $contactEmail) {
             try {
+                $challenge = $this->spConsentRequestsRepository->generate($spEntityId, $contactEmail);
+
+                $challengeUrl = $this->helpers->routes()->getUrl(
+                    Routes::PATH_SP_CONSENTS_VERIFY_CHALLENGE,
+                    ModuleConfiguration::MODULE_NAME,
+                    [
+                        Conformance::KEY_SP_ENTITY_ID => $spEntityId,
+                        SpConsent::KEY_CHALLENGE => $challenge,
+                        SpConsent::KEY_CONTACT_EMAIL => $contactEmail,
+                    ]
+                );
+
                 $emailInstance = $this->emailFactory->build(
                     Translate::noop('Conformance test consent'),
                     null,
@@ -116,9 +121,9 @@ class SpConsentHandler
         }
     }
 
-    public function getSpConsentRequest(string $spEntityId): ?array
+    public function getSpConsentRequest(string $spEntityId, string $contactEmail): ?array
     {
-        return $this->spConsentRequestsRepository->get($spEntityId);
+        return $this->spConsentRequestsRepository->get($spEntityId, $contactEmail);
     }
 
     public function getSpConsents(): array
@@ -131,9 +136,9 @@ class SpConsentHandler
         return $this->spConsentRequestsRepository->getAll();
     }
 
-    public function addConsent(string $spEntityId): void
+    public function addConsent(string $spEntityId, string $contactEmail): void
     {
-        $this->spConsentRepository->add($spEntityId);
+        $this->spConsentRepository->add($spEntityId, $contactEmail);
         $this->spConsentRequestsRepository->delete($spEntityId);
     }
 

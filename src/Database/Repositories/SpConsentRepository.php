@@ -12,6 +12,7 @@ class SpConsentRepository extends AbstractDbEntity
 {
     final public const COLUMN_ENTITY_ID = 'entity_id';
     final public const COLUMN_CREATED_AT = 'created_at';
+    final public const COLUMN_CONTACT_EMAIL = 'contact_email';
 
     public static function getTableName(): string
     {
@@ -54,21 +55,24 @@ class SpConsentRepository extends AbstractDbEntity
         return $row;
     }
 
-    public function add(string $spEntityId): void
+    public function add(string $spEntityId, string $contactEmail): void
     {
         $this->database->write(
             <<<EOT
                 INSERT IGNORE INTO {$this->getPrefixedTableName()} (
                     {$this->noop(self::COLUMN_ENTITY_ID)},
+                    {$this->noop(self::COLUMN_CONTACT_EMAIL)},
                     {$this->noop(self::COLUMN_CREATED_AT)}
                 )
                 VALUES (
                     :{$this->noop(self::COLUMN_ENTITY_ID)},
+                    :{$this->noop(self::COLUMN_CONTACT_EMAIL)},
                     :{$this->noop(self::COLUMN_CREATED_AT)}
                 )
             EOT,
             [
                 self::COLUMN_ENTITY_ID => $spEntityId,
+                self::COLUMN_CONTACT_EMAIL => $contactEmail,
                 self::COLUMN_CREATED_AT => (new DateTime())->getTimestamp(),
             ]
         );
