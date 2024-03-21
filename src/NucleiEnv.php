@@ -80,7 +80,7 @@ static:
       - $conformanceIdPHostname
     token: $token
 HEREDOC;
-        $nucleiSecretFilePath = tempnam(sys_get_temp_dir(), hash('sha256', $spEntityId));
+        $nucleiSecretFilePath = tempnam(sys_get_temp_dir(), hash('sha256', $spEntityId)) . '.yml';
         file_put_contents($nucleiSecretFilePath, $nucleiSecretFile);
         $nucleiSecretFilePath = escapeshellarg($nucleiSecretFilePath);
         $testId = empty($testId) ? null : escapeshellarg($testId);
