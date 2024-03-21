@@ -115,10 +115,28 @@ class NucleiResults
                 }
             }
 
-            $latestStatus = new TestResultStatus($selectedSpEntityId, intval($latestTimestamp), $parsedJsonResult);
-        }
+            $findings = null;
+            if (
+                in_array(NucleiEnv::FILE_FINDINGS_EXPORT, $latestArtifacts) &&
+                file_exists(
+                    $findingsPath = $this->helpers->filesystem()->getPathFromElements(
+                        $this->nucleiEnv->getSpResultsDir($selectedSpEntityId),
+                        strval($latestTimestamp),
+                        NucleiEnv::FILE_FINDINGS_EXPORT
+                    )
+                )
+            ) {
+                $findingsContent = file_get_contents($findingsPath);
+                $findings = $findingsContent ?: null;
+            }
 
-//        dd($artifacts, $files, );
+            $latestStatus = new TestResultStatus(
+                $selectedSpEntityId,
+                intval($latestTimestamp),
+                $parsedJsonResult,
+                $findings
+            );
+        }
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',

@@ -25,12 +25,17 @@ class TestResultStatus
             return false;
         }
 
-        // The result is not empty, so there were some findings, meaning something was not right.
+        // If JSON result is not empty, there were some findings, meaning something was not right.
         if (!empty($this->parsedJsonResult)) {
             return false;
         }
 
-        // Result is empty array, meaning there were no findings, so the status is ok.
+        // JSON result was empty, but check for other errors in findings.
+        if (!empty($this->findings)) {
+            return false;
+        }
+
+        // There were no findings, so the status is ok.
         return true;
     }
 
@@ -40,24 +45,28 @@ class TestResultStatus
             return 'No JSON result available.';
         }
 
-        if (empty($this->parsedJsonResult)) {
-            return 'Passed without findings.';
-        }
-
-        $extractedResults = [];
-        /** @var array $item */
-        foreach ($this->parsedJsonResult as $item) {
-            if (isset($item['extracted-results']) && is_array($item['extracted-results'])) {
-                $extractedResults = array_unique(array_merge($extractedResults, $item['extracted-results']));
+        if (!empty($this->parsedJsonResult)) {
+            $extractedResults = [];
+            /** @var array $item */
+            foreach ($this->parsedJsonResult as $item) {
+                if (isset($item['extracted-results']) && is_array($item['extracted-results'])) {
+                    $extractedResults = array_unique(array_merge($extractedResults, $item['extracted-results']));
+                }
             }
+
+            // Make sure we only have strings as values
+            array_walk($extractedResults, function (mixed &$value) {
+                $value = (string)$value;
+            });
+
+            /** @var string[] $extractedResults */
+            return 'Found issues related to tests: ' . implode(', ', $extractedResults);
         }
 
-        // Make sure we only have strings as values
-        array_walk($extractedResults, function (mixed &$value) {
-            $value = (string)$value;
-        });
+        if (!empty($this->findings)) {
+            return sprintf("There were some issues: %s", $this->findings);
+        }
 
-        /** @var string[] $extractedResults */
-        return 'Found issues related to tests: ' . implode(', ', $extractedResults);
+        return 'Passed without findings.';
     }
 }
