@@ -23,6 +23,7 @@ class NucleiEnv
     public const NUCLEI_TEMPLATES = [self::NUCLEI_TEMPLATE_SAML_RAW_ALL, self::NUCLEI_TEMPLATE_SAML_HEADLESS_ALL];
 
     public readonly string $dataDir;
+    public readonly string $configFile;
     public readonly string $conformanceIdpBaseUrl;
     public readonly int $numberOfResultsToKeepPerSp;
 
@@ -46,6 +47,11 @@ class NucleiEnv
         $this->dataDir = (
             $this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir()
         ) . self::KEY_NUCLEI;
+        $this->configFile = $this->helpers->filesystem()->getPathFromElements(
+            $this->moduleConfiguration->getModuleRootDirectory(),
+            self::KEY_NUCLEI,
+            'config.yaml',
+        );
         $this->conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
             $this->sspBridge->utils()->http()->getBaseURL();
         $this->numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
@@ -85,7 +91,9 @@ HEREDOC;
 
         $command =
             "mkdir -p $spTestResultsDir; " .
-            "nuclei -target $acsUrl " .
+            "nuclei " .
+            "-config {$this->configFile} " .
+            "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
             "-template-url {$this->getTemplatesURL()} " .
