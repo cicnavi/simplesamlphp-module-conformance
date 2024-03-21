@@ -61,7 +61,7 @@ class NucleiEnv
         string $testId = null,
     ): string {
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
-        $screenshotsDir = escapeshellarg(rtrim($spTestResultsDir . '/') . '/pictures/');
+        $screenshotsDir = $this->helpers->filesystem()->getPathFromElements($spTestResultsDir, 'pictures');
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
