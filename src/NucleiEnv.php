@@ -11,7 +11,6 @@ use SimpleSAML\Module\conformance\Errors\ConformanceException;
 class NucleiEnv
 {
     public const KEY_NUCLEI = 'nuclei';
-    public const KEY_TEMPLATE_EXTENSION = '.yaml';
 
     public const FILE_OUTPUT_EXPORT = 'output.txt';
     public const FILE_FINDINGS_EXPORT = 'findings.txt';
@@ -21,12 +20,11 @@ class NucleiEnv
     public const DIR_MARKDOWN_EXPORT = 'markdown';
     public const NUCLEI_TEMPLATE_SAML_RAW_ALL = 'saml-raw-all';
     public const NUCLEI_TEMPLATE_SAML_HEADLESS_ALL = 'saml-headless-all';
+    public const NUCLEI_TEMPLATES = [self::NUCLEI_TEMPLATE_SAML_RAW_ALL, self::NUCLEI_TEMPLATE_SAML_HEADLESS_ALL];
 
     public readonly string $dataDir;
-    public readonly string $publicDir;
-    public readonly string $templatesDir;
+    public readonly string $configFile;
     public readonly string $conformanceIdpBaseUrl;
-    public readonly string $conformanceIdpHostname;
     public readonly int $numberOfResultsToKeepPerSp;
 
     public bool $enableDebug = true;
@@ -49,13 +47,13 @@ class NucleiEnv
         $this->dataDir = (
             $this->sspConfiguration->getPathValue(ModuleConfiguration::KEY_DATADIR) ?? sys_get_temp_dir()
         ) . self::KEY_NUCLEI;
-        $this->publicDir = $this->moduleConfiguration->getModuleRootDirectory() . DIRECTORY_SEPARATOR . 'public' .
-            DIRECTORY_SEPARATOR . self::KEY_NUCLEI;
-        $this->templatesDir = $this->publicDir . DIRECTORY_SEPARATOR . 'templates';
+        $this->configFile = $this->helpers->filesystem()->getPathFromElements(
+            $this->moduleConfiguration->getModuleRootDirectory(),
+            self::KEY_NUCLEI,
+            'config.yaml',
+        );
         $this->conformanceIdpBaseUrl = $this->moduleConfiguration->getConformanceIdpBaseUrl() ??
             $this->sspBridge->utils()->http()->getBaseURL();
-        $this->conformanceIdpHostname = $this->moduleConfiguration->getConformanceIdpHostname() ??
-            $this->sspBridge->utils()->http()->getSelfHost();
         $this->numberOfResultsToKeepPerSp = $this->moduleConfiguration->getNumberOfResultsToKeepPerSp();
     }
 
@@ -64,37 +62,45 @@ class NucleiEnv
      */
     public function prepareCommand(
         string $spEntityId,
-        string $target,
         string $ascUrl,
         string $token,
         string $testId = null,
     ): string {
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
-        $fileName = $this->helpers->filesystem()->cleanFilename($spEntityId);
+        $screenshotsDir = $this->helpers->filesystem()->getPathFromElements($spTestResultsDir, 'pictures');
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
-        $target = escapeshellarg($target);
         $acsUrl = escapeshellarg($ascUrl);
-        $token = escapeshellarg($token);
+        $conformanceIdPHostname = parse_url($this->conformanceIdpBaseUrl, PHP_URL_HOST);
+        $nucleiSecretFile = <<<HEREDOC
+static:
+  - type: bearertoken
+    domains:
+      - $conformanceIdPHostname
+    token: $token
+HEREDOC;
+        $nucleiSecretFilePath = tempnam(sys_get_temp_dir(), hash('sha256', $spEntityId)) . '.yml';
+        file_put_contents($nucleiSecretFilePath, $nucleiSecretFile);
+        $nucleiSecretFilePath = escapeshellarg($nucleiSecretFilePath);
         $testId = empty($testId) ? null : escapeshellarg($testId);
+        $bearerToken = escapeshellarg($token);
 
         // First use the raw HTTP template to run the tests.
         $this->templateId = self::NUCLEI_TEMPLATE_SAML_RAW_ALL;
 
         $command =
             "mkdir -p $spTestResultsDir; " .
-            "nuclei -target $target " .
+            "nuclei " .
+            "-config {$this->configFile} " .
+            "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
-            "-templates {$this->getTemplatesPath()} " .
+            "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
-            "-var CONSUMER_URL=$acsUrl " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
-            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
-            "-var FILENAME=$fileName " .
-            "-var TOKEN=$token " .
+            "-var SCREENSHOTS_DIR=$screenshotsDir " .
+            "-secret-file $nucleiSecretFilePath " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableFindingsExport ? "-output {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_FINDINGS_EXPORT)} " : '') .
             ($this->enableJsonExport ? "-json-export {$this->helpers->filesystem()->getPathFromElements($spTestResultsDir, self::FILE_JSON_EXPORT)} " : '') .
@@ -113,17 +119,16 @@ class NucleiEnv
 
         // Currently no result exports because of the false positive matches with headless browser.
         $command .=
-            "nuclei -target $target " .
+            "nuclei " .
+            "-config {$this->configFile} " .
+            "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
-            "-templates {$this->getTemplatesPath()} " .
+            "-template-url {$this->getTemplatesURL()} " .
             "-var SP_ENTITY_ID=$spEntityId " .
-            "-var CONSUMER_URL=$acsUrl " .
             "-var CONFORMANCE_IDP_BASE_URL=$this->conformanceIdpBaseUrl " .
-            "-var CONFORMANCE_IDP_HOSTNAME=$this->conformanceIdpHostname " .
-            "-var RESULT_OUTPUT_DIR=$spTestResultsDir " .
-            "-var FILENAME=$fileName " .
-            "-var TOKEN=$token " .
+            "-var SCREENSHOTS_DIR=$screenshotsDir " .
+            "-var BEARER_TOKEN=$bearerToken " .
             ($testId ? "-var TEST_ID=$testId " : '') .
             ($this->enableDebug ? '-debug ' : '') .
             ($this->enableVerbose ? '-verbose ' : '') .
@@ -133,6 +138,7 @@ class NucleiEnv
 
         // Cleanup part of the tests.
         $command .=
+            "rm $nucleiSecretFilePath; " . # remove nuclei secret file
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
             "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
@@ -162,19 +168,21 @@ class NucleiEnv
      */
     public function setTemplateId(string $templateId): NucleiEnv
     {
-        if (
-            file_exists($this->templatesDir . DIRECTORY_SEPARATOR . $templateId . self::KEY_TEMPLATE_EXTENSION)
-        ) {
+        if (in_array($templateId, self::NUCLEI_TEMPLATES)) {
             $this->templateId = $templateId;
             return $this;
         }
-
         throw new ConformanceException('Invalid Nuclei template ID provided.');
     }
 
-    public function getTemplatesPath(): string
+    private function getTemplatesURL(): string
     {
-        return $this->templatesDir . DIRECTORY_SEPARATOR .
-            ($this->templateId ? $this->templateId . self::KEY_TEMPLATE_EXTENSION : '');
+        $templates = $this->templateId ? [$this->templateId] : self::NUCLEI_TEMPLATES;
+        return implode(',', array_map(function ($templateId){
+            return sprintf(
+                "https://gitlab.software.geant.org/TI_Incubator/sp_nuclei_tests/-/raw/main/nuclei-templates/%s.yaml",
+                $templateId
+            );
+        }, $templates));
     }
 }

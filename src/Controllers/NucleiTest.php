@@ -129,14 +129,6 @@ class NucleiTest
             $acsUrl = (string)$acsUrl;
         }
 
-        $target = parse_url($acsUrl, PHP_URL_HOST);
-
-        if (empty($target)) {
-            return new StreamedResponse(function () use ($acsUrl) {
-                echo "Could not extract target from ACS: $acsUrl.";
-            });
-        }
-
         // TODO mivanci remove if not necessary.
         /** @psalm-suppress MixedAssignment */
 //        $templateId = $request->get('templateId');
@@ -166,7 +158,7 @@ class NucleiTest
 
         $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
-        $command = $this->nucleiEnv->prepareCommand($spEntityId, $target, $acsUrl, $token, $testId);
+        $command = $this->nucleiEnv->prepareCommand($spEntityId, $acsUrl, $token, $testId);
 
         $this->logger->debug('Nuclei command to run: ' . $command);
 

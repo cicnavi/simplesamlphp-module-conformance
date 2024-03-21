@@ -19,7 +19,6 @@ class ModuleConfiguration
     final public const FILE_NAME = 'module_conformance.php';
     final public const OPTION_DUMMY_PRIVATE_KEY = 'dummy-private-key';
     final public const OPTION_CONFORMANCE_IDP_BASE_URL = 'conformance-idp-base-url';
-    final public const OPTION_CONFORMANCE_IDP_HOSTNAME = 'conformance-idp-host';
     final public const OPTION_NUMBER_OF_RESULTS_TO_KEEP_PER_SP = 'number-of-results-to-keep-per-sp';
     final public const OPTION_ADMINISTRATIVE_TOKENS = 'administrative-tokens';
     final public const OPTION_SERVICE_PROVIDER_TOKENS = 'service-provider-tokens';
@@ -89,11 +88,6 @@ class ModuleConfiguration
     public function getConformanceIdpBaseUrl(): ?string
     {
         return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_BASE_URL, null);
-    }
-
-    public function getConformanceIdpHostname(): ?string
-    {
-        return $this->getConfig()->getOptionalString(self::OPTION_CONFORMANCE_IDP_HOSTNAME, null);
     }
 
     public function getLocalTestRunnerToken(): string
