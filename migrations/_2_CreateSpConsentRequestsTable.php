@@ -11,9 +11,12 @@ class _2_CreateSpConsentRequestsTable extends AbstractDbEntity implements Migrat
     {
         $this->database->write(<<< EOT
         CREATE TABLE {$this->getPrefixedTableName()} (
-            entity_id VARCHAR(255) PRIMARY KEY NOT NULL,
+            id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
+            entity_id VARCHAR(255) NOT NULL,
             challenge char(64) NOT NULL,
-            created_at BIGINT UNSIGNED NOT NULL
+            contact_email VARCHAR(255) NOT NULL,
+            created_at BIGINT UNSIGNED NOT NULL,
+            KEY (entity_id)
         )
 EOT
         );

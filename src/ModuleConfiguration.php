@@ -27,6 +27,7 @@ class ModuleConfiguration
     final public const OPTION_SHOULD_ACQUIRE_SP_CONSENT_BEFORE_TESTS = 'should-acquire-sp-consent-before-tests';
     final public const OPTION_SPS_WITH_OVERRIDDEN_CONSENTS = 'sps-with-overridden-consents';
     final public const OPTION_SP_CONSENT_CHALLENGE_TTL = 'sp-consent-challenge-ttl';
+    final public const OPTION_CRON_TAG_FOR_BULK_TEST_RUNNER = 'cron_tag_for_bulk_test_runner';
 
     /**
      * Contains configuration from module configuration file.
@@ -162,5 +163,10 @@ class ModuleConfiguration
             $defaultTtl,
             $defaultTtl
         );
+    }
+
+    public function getCronTagForBulkTestRunner()
+    {
+
     }
 }

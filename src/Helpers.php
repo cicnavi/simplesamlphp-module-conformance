@@ -10,7 +10,7 @@ use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\Helpers\Shell;
 use SimpleSAML\Module\conformance\Helpers\State;
-use SimpleSAML\Module\conformance\Helpers\Str;
+use SimpleSAML\Module\conformance\Helpers\Random;
 
 class Helpers
 {
@@ -21,7 +21,7 @@ class Helpers
 
     protected static ?Database $database = null;
     protected static ?Shell $shell = null;
-    protected static ?Str $str = null;
+    protected static ?Random $random = null;
 
     public function arr(): Arr
     {
@@ -52,8 +52,8 @@ class Helpers
         return self::$shell ??= new Shell();
     }
 
-    public function str(): Str
+    public function random(): Random
     {
-        return self::$str ??= new Str();
+        return self::$random ??= new Random();
     }
 }

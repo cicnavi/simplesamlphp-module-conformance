@@ -1,4 +1,8 @@
 
+bulk:
+  path: /bulk
+  controller: SimpleSAML\Module\conformance\Controllers\Runner::run
+
 conformance-overview:
   path: /overview
   controller: SimpleSAML\Module\conformance\Controllers\Overview::index
