@@ -6,6 +6,7 @@ namespace SimpleSAML\Module\conformance;
 
 use SimpleSAML\Module\conformance\Helpers\Arr;
 use SimpleSAML\Module\conformance\Helpers\Database;
+use SimpleSAML\Module\conformance\Helpers\Environment;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\Helpers\Shell;
@@ -22,6 +23,7 @@ class Helpers
     protected static ?Database $database = null;
     protected static ?Shell $shell = null;
     protected static ?Random $random = null;
+    protected static ?Environment $environment;
 
     public function arr(): Arr
     {
@@ -55,5 +57,10 @@ class Helpers
     public function random(): Random
     {
         return self::$random ??= new Random();
+    }
+
+    public function environment(): Environment
+    {
+        return self::$environment ??= new Environment();
     }
 }

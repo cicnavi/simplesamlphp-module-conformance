@@ -90,6 +90,7 @@ HEREDOC;
         $this->templateId = self::NUCLEI_TEMPLATE_SAML_RAW_ALL;
 
         $command =
+            "cd $this->dataDir; " .
             "mkdir -p $spTestResultsDir; " .
             "nuclei " .
             "-config {$this->configFile} " .
