@@ -4,19 +4,28 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Entities\Nuclei;
 
-use SimpleSAML\Module\conformance\NucleiEnv;
+
+use JsonException;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
 class TestResultStatus
 {
+    public readonly ?array $parsedJsonResult;
+
+    /**
+     * @throws JsonException
+     */
     public function __construct(
         public readonly string $spEntityId,
         public readonly int $timestamp,
-        public readonly ?array $parsedJsonResult = null,
+        ?string $jsonResult = null,
         public readonly ?string $findings = null,
     ) {
+        $this->parsedJsonResult = is_null($jsonResult) ?
+            null :
+            json_decode($jsonResult, true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function isOk(): bool

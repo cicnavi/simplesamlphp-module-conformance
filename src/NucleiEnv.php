@@ -66,6 +66,7 @@ class NucleiEnv
         string $token,
         string $testId = null,
     ): string {
+        $spResultsDir = $this->getSpResultsDir($spEntityId);
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
         $screenshotsDir = $this->helpers->filesystem()->getPathFromElements($spTestResultsDir, 'pictures');
 
@@ -142,7 +143,7 @@ HEREDOC;
             "rm $nucleiSecretFilePath; " . # remove nuclei secret file
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
-            "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
+            "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
         ;
 
         return $command;

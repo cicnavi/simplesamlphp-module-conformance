@@ -15,6 +15,8 @@ use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\BulkTest\State;
 use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRepository;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
+use SimpleSAML\Module\conformance\Entities\Nuclei\TestResultStatus;
 use SimpleSAML\Module\conformance\Factories\BulkTestStateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -51,6 +53,7 @@ class Runner
         protected MetaDataStorageHandler $metaDataStorageHandler,
         protected SpConsentRepository $spConsentRepository,
         protected SpConsentHandler $spConsentHandler,
+        protected TestResultRepository $testResultRepository,
         protected NucleiEnv $nucleiEnv,
         protected LoggerInterface $logger,
         CacheInterface $cache = null,
@@ -154,12 +157,89 @@ class Runner
                 echo $command;
                 `$command`;
 
-                $this->state->incrementSuccessfulJobsProcessed();
+                $message = 'Storing results to database.';
+                $this->logger->debug($message);
+                $this->state->addStatusMessage($message);
 
+                // TODO store test results to DB
+                $this->nucleiEnv->getSpTestResultsDir($spEntityId);
+
+                $files = [];
+                if (file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($spEntityId))) {
+                    $files = $this->helpers->filesystem()->listFilesInDirectory(
+                        $resultsDir,
+                        Helpers\Filesystem::KEY_SORT_DESC,
+                    );
+                }
+
+                $artifacts = [];
+
+                // Key by datetime
+                foreach ($files as $artifact) {
+                    $elements = explode(DIRECTORY_SEPARATOR, $artifact, 2);
+
+                    if (count($elements) !== 2) {
+                        continue;
+                    }
+
+                    if (isset($artifacts[$elements[0]])) {
+                        $artifacts[$elements[0]][] =  $elements[1];
+                    } else {
+                        $artifacts[$elements[0]] = [$elements[1]];
+                    }
+                }
+
+                // TODO mivanci move to factory
+                $latestStatus = null;
+                $latestTimestamp = key($artifacts);
+                $latestArtifacts = current($artifacts);
+                if (
+                    (!is_null($latestTimestamp)) &&
+                    is_array($latestArtifacts)
+                ) {
+                    $jsonResult = null;
+                    if (
+                        in_array(NucleiEnv::FILE_JSON_EXPORT, $latestArtifacts) &&
+                        file_exists(
+                            $jsonResultPath = $this->helpers->filesystem()->getPathFromElements(
+                                $this->nucleiEnv->getSpResultsDir($spEntityId),
+                                strval($latestTimestamp),
+                                NucleiEnv::FILE_JSON_EXPORT
+                            )
+                        ) &&
+                        $jsonResultContent = file_get_contents($jsonResultPath)
+                    ) {
+                        $jsonResult = $jsonResultContent;
+                    }
+
+                    $findings = null;
+                    if (
+                        in_array(NucleiEnv::FILE_FINDINGS_EXPORT, $latestArtifacts) &&
+                        file_exists(
+                            $findingsPath = $this->helpers->filesystem()->getPathFromElements(
+                                $this->nucleiEnv->getSpResultsDir($spEntityId),
+                                strval($latestTimestamp),
+                                NucleiEnv::FILE_FINDINGS_EXPORT
+                            )
+                        ) &&
+                        $findingsContent = file_get_contents($findingsPath)
+                    ) {
+
+                        $findings = $findingsContent;
+                    }
+
+                    $this->testResultRepository->addForSp(
+                        $spEntityId,
+                        $latestTimestamp,
+                        $jsonResult,
+                        $findings,
+                    );
+                }
+
+                $this->state->incrementSuccessfulJobsProcessed();
                 $successMessage = sprintf('Successfully processed test with for SP %s.', $spEntityId);
                 $this->logger->debug($successMessage);
                 $this->state->addStatusMessage($successMessage);
-
 
             } catch (Throwable $exception) {
                 $message = sprintf('Error while processing tests. Error was: %s', $exception->getMessage());

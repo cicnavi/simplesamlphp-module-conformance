@@ -10,6 +10,7 @@ use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 use SimpleSAML\Module\conformance\Entities\Nuclei\TestResultStatus;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\Factories\TemplateFactory;
@@ -36,6 +37,7 @@ class NucleiResults
         protected NucleiEnv $nucleiEnv,
         protected Helpers $helpers,
         protected LoggerInterface $logger,
+        protected TestResultRepository $testResultRepository,
     ) {
     }
 
@@ -58,85 +60,27 @@ class NucleiResults
             $this->authorization->requireAdministrativeToken($request);
         }
 
-        $files = [];
+        // TODO mivanci fetch results from database (once implemented)
+        $results = [];
         if (
             $selectedSpEntityId &&
-            file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($selectedSpEntityId))
+            ($rows = $this->testResultRepository->getForSp($selectedSpEntityId))
         ) {
-            $files = $this->helpers->filesystem()->listFilesInDirectory(
-                $resultsDir,
-                Helpers\Filesystem::KEY_SORT_DESC,
-            );
-        }
-
-        $artifacts = [];
-
-        // Key by datetime
-        foreach ($files as $artifact) {
-            $elements = explode(DIRECTORY_SEPARATOR, $artifact, 2);
-
-            if (count($elements) !== 2) {
-                continue;
-            }
-
-            if (isset($artifacts[$elements[0]])) {
-                $artifacts[$elements[0]][] =  $elements[1];
-            } else {
-                $artifacts[$elements[0]] = [$elements[1]];
+            foreach ($rows as $row) {
+                $results[] = new TestResultStatus(
+                    $row[TestResultRepository::COLUMN_ENTITY_ID],
+                    $row[TestResultRepository::COLUMN_HAPPENED_AT],
+                    $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT],
+                    $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS],
+                );
             }
         }
 
-        // TODO mivanci move to factory
-        $latestStatus = null;
-        $latestTimestamp = key($artifacts);
-        $latestArtifacts = current($artifacts);
-        if (
-            $selectedSpEntityId &&
-            (!is_null($latestTimestamp)) &&
-            is_array($latestArtifacts)
-        ) {
-            $parsedJsonResult = null;
-            if (
-                in_array(NucleiEnv::FILE_JSON_EXPORT, $latestArtifacts) &&
-                file_exists(
-                    $jsonResultPath = $this->helpers->filesystem()->getPathFromElements(
-                        $this->nucleiEnv->getSpResultsDir($selectedSpEntityId),
-                        strval($latestTimestamp),
-                        NucleiEnv::FILE_JSON_EXPORT
-                    )
-                ) &&
-                $jsonResultContent = file_get_contents($jsonResultPath)
-            ) {
-                try {
-                    /** @var array $parsedJsonResult */
-                    $parsedJsonResult = json_decode($jsonResultContent, true, 512, JSON_THROW_ON_ERROR);
-                } catch (\Throwable $exception) {
-                    $this->logger->error('Unable to parse exported Nuclei JSON result for ' . $selectedSpEntityId);
-                }
-            }
 
-            $findings = null;
-            if (
-                in_array(NucleiEnv::FILE_FINDINGS_EXPORT, $latestArtifacts) &&
-                file_exists(
-                    $findingsPath = $this->helpers->filesystem()->getPathFromElements(
-                        $this->nucleiEnv->getSpResultsDir($selectedSpEntityId),
-                        strval($latestTimestamp),
-                        NucleiEnv::FILE_FINDINGS_EXPORT
-                    )
-                )
-            ) {
-                $findingsContent = file_get_contents($findingsPath);
-                $findings = $findingsContent ?: null;
-            }
+        $latestStatus = current($results);
 
-            $latestStatus = new TestResultStatus(
-                $selectedSpEntityId,
-                intval($latestTimestamp),
-                $parsedJsonResult,
-                $findings
-            );
-        }
+        // TODO mivanci replace artifacts
+        $artifacts = [''];
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
