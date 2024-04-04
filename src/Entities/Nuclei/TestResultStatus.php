@@ -4,22 +4,30 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Entities\Nuclei;
 
-
 use JsonException;
+use JsonSerializable;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
-class TestResultStatus
+class TestResultStatus implements JsonSerializable
 {
+    final public const COLUMN_ID = 'id';
+    final public const COLUMN_SP_ENTITY_ID = 'sp_entity_id';
+    final public const COLUMN_HAPPENED_AT = 'happened_at';
+    final public const COLUMN_IS_OK = 'is_ok';
+    final public const DESCRIPTION = 'description';
+
     public readonly ?array $parsedJsonResult;
 
     /**
      * @throws JsonException
      */
     public function __construct(
+        public readonly int $id,
         public readonly string $spEntityId,
-        public readonly int $timestamp,
+        public readonly int $happenedAt,
         ?string $jsonResult = null,
         public readonly ?string $findings = null,
     ) {
@@ -77,5 +85,16 @@ class TestResultStatus
         }
 
         return 'Passed without findings.';
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            self::COLUMN_ID => $this->id,
+            self::COLUMN_SP_ENTITY_ID => $this->spEntityId,
+            self::COLUMN_HAPPENED_AT => $this->happenedAt,
+            self::COLUMN_IS_OK => $this->isOk(),
+            self::DESCRIPTION => $this->getDescription(),
+        ];
     }
 }

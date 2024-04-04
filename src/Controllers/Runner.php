@@ -16,7 +16,6 @@ use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\BulkTest\State;
 use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRepository;
 use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
-use SimpleSAML\Module\conformance\Entities\Nuclei\TestResultStatus;
 use SimpleSAML\Module\conformance\Factories\BulkTestStateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -224,7 +223,6 @@ class Runner
                         ) &&
                         $findingsContent = file_get_contents($findingsPath)
                     ) {
-
                         $findings = $findingsContent;
                     }
 
@@ -234,13 +232,16 @@ class Runner
                         $jsonResult,
                         $findings,
                     );
+                    $this->testResultRepository->deleteObsolete(
+                        $spEntityId,
+                        $this->moduleConfiguration->getNumberOfResultsToKeepPerSp()
+                    );
                 }
 
                 $this->state->incrementSuccessfulJobsProcessed();
                 $successMessage = sprintf('Successfully processed test with for SP %s.', $spEntityId);
                 $this->logger->debug($successMessage);
                 $this->state->addStatusMessage($successMessage);
-
             } catch (Throwable $exception) {
                 $message = sprintf('Error while processing tests. Error was: %s', $exception->getMessage());
                 $context = ['spEntityId' => $spEntityId];

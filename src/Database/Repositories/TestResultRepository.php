@@ -10,6 +10,7 @@ use SimpleSAML\Module\conformance\Database\AbstractDbEntity;
 
 class TestResultRepository extends AbstractDbEntity
 {
+    final public const COLUMN_ID = 'id';
     final public const COLUMN_ENTITY_ID = 'entity_id';
     final public const COLUMN_HAPPENED_AT = 'happened_at';
     final public const COLUMN_NUCLEI_JSON_RESULT = 'nuclei_json_result';
@@ -53,17 +54,20 @@ class TestResultRepository extends AbstractDbEntity
         );
     }
 
-    public function getForSp(string $spEntityId, int $limit = 10): array
+    public function get(string $spEntityId = null, int $limit = 100, int $offset = 0): array
     {
-
         // Build read statement
-        $sql = "SELECT * FROM {$this->getPrefixedTableName()} WHERE " .
-            self::COLUMN_ENTITY_ID . " = :" . self::COLUMN_ENTITY_ID .
-            " ORDER BY " . self::COLUMN_HAPPENED_AT . " DESC";
-        ;
-        $params = [self::COLUMN_ENTITY_ID => $spEntityId,];
+        $sql = "SELECT * FROM {$this->getPrefixedTableName()} ";
+        $params = [];
 
-        $sql .= " LIMIT $limit";
+        if (!is_null($spEntityId)) {
+            $sql .= "WHERE {$this->noop(self::COLUMN_ENTITY_ID)} = :{$this->noop(self::COLUMN_ENTITY_ID)} ";
+            $params[self::COLUMN_ENTITY_ID] = $spEntityId;
+        }
+
+        $sql .= "ORDER BY {$this->noop(self::COLUMN_ENTITY_ID)} ASC, " .
+            "{$this->noop(self::COLUMN_HAPPENED_AT)} DESC " .
+            "LIMIT $limit OFFSET $offset";
 
         $stmt = $this->database->read($sql, $params);
 
@@ -72,24 +76,59 @@ class TestResultRepository extends AbstractDbEntity
         return $rows ?: [];
     }
 
-    public function getLastForAllSps(): array
+    public function getLatest(string $spEntityId = null, int $limit = 100, int $offset = 0): array
     {
-        $stmt = $this->database->read(
-            "SELECT * FROM {$this->getPrefixedTableName()} " .
-            "ORDER BY " . self::COLUMN_ENTITY_ID
-        );
+        $sql = "SELECT ctr.* FROM {$this->getPrefixedTableName()} as ctr ";
+        $params = [];
+
+        $sql .= "INNER JOIN " .
+            "(" .
+                "SELECT " .
+                    "{$this->noop(self::COLUMN_ENTITY_ID)}, " .
+                    "MAX({$this->noop(self::COLUMN_HAPPENED_AT)}) AS {$this->noop(self::COLUMN_HAPPENED_AT)} " .
+                "FROM {$this->getPrefixedTableName()} " .
+                "GROUP BY {$this->noop(self::COLUMN_ENTITY_ID)} " .
+            ") AS ctrl " .
+            "ON ctr.{$this->noop(self::COLUMN_ENTITY_ID)} = ctrl.{$this->noop(self::COLUMN_ENTITY_ID)} AND " .
+                "ctr.{$this->noop(self::COLUMN_HAPPENED_AT)} = ctrl.{$this->noop(self::COLUMN_HAPPENED_AT)} ";
+
+        if (!is_null($spEntityId)) {
+            $sql .= "WHERE ctr.{$this->noop(self::COLUMN_ENTITY_ID)} = :{$this->noop(self::COLUMN_ENTITY_ID)} ";
+            $params[self::COLUMN_ENTITY_ID] = $spEntityId;
+        }
+
+        $sql .= "ORDER BY {$this->noop(self::COLUMN_ENTITY_ID)} ASC, " .
+            "{$this->noop(self::COLUMN_HAPPENED_AT)} DESC " .
+            "LIMIT $limit OFFSET $offset";
+
+        $stmt = $this->database->read($sql, $params);
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $rows ?: [];
     }
 
-    public function delete(string $spEntityId): void
+    public function deleteObsolete(string $spEntityId, int $recordsToKeep = 10): void
     {
+        $recordsToKeep = max(1, $recordsToKeep);
+
         $this->database->write(
             "DELETE FROM {$this->getPrefixedTableName()} " .
-            "WHERE " . self::COLUMN_ENTITY_ID . " = :" . self::COLUMN_ENTITY_ID,
+            "WHERE {$this->noop(self::COLUMN_ENTITY_ID)} = :{$this->noop(self::COLUMN_ENTITY_ID)} AND " .
+            "{$this->noop(self::COLUMN_HAPPENED_AT)} < " .
+            "(" .
+            "SELECT MIN(sorted.{$this->noop(self::COLUMN_HAPPENED_AT)}) FROM " .
+                "(" .
+                    "SELECT {$this->noop(self::COLUMN_HAPPENED_AT)} " .
+                    "FROM {$this->getPrefixedTableName()} " .
+                    "WHERE {$this->noop(self::COLUMN_ENTITY_ID)} = :{$this->noop(self::COLUMN_ENTITY_ID)}2 " .
+                    "ORDER BY {$this->noop(self::COLUMN_HAPPENED_AT)} DESC " .
+                    "LIMIT $recordsToKeep " .
+                ") as sorted " .
+            ")",
             [
                 self::COLUMN_ENTITY_ID => $spEntityId,
+                self::COLUMN_ENTITY_ID . '2' => $spEntityId,
             ]
         );
     }

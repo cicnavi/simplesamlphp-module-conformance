@@ -167,6 +167,5 @@ class ModuleConfiguration
 
     public function getCronTagForBulkTestRunner()
     {
-
     }
 }

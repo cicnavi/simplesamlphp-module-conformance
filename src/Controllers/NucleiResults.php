@@ -20,6 +20,7 @@ use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\NucleiEnv;
 use SimpleSAML\Module\conformance\SspBridge;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -48,50 +49,67 @@ class NucleiResults
      */
     public function index(Request $request): Response
     {
+        $this->authorization->requireAdministrativeToken($request);
+
         $serviceProviders = $this->metaDataStorageHandler->getList(SspBridge::KEY_SET_SP_REMOTE);
 
         /** @psalm-suppress InternalMethod */
-        $selectedSpEntityId = (string) $request->get('spEntityId');
+        $spEntityId = $request->get('spEntityId');
+        $spEntityId = $spEntityId ? (string)$spEntityId : null;
+        $latestOnly = (bool)$request->get('latestOnly');
 
-        if ($selectedSpEntityId) {
-            // Authorization for specific SP.
-            $this->authorization->requireServiceProviderToken($request, $selectedSpEntityId);
-        } else {
-            $this->authorization->requireAdministrativeToken($request);
-        }
-
-        // TODO mivanci fetch results from database (once implemented)
-        $results = [];
-        if (
-            $selectedSpEntityId &&
-            ($rows = $this->testResultRepository->getForSp($selectedSpEntityId))
-        ) {
-            foreach ($rows as $row) {
-                $results[] = new TestResultStatus(
-                    $row[TestResultRepository::COLUMN_ENTITY_ID],
-                    $row[TestResultRepository::COLUMN_HAPPENED_AT],
-                    $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT],
-                    $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS],
-                );
-            }
-        }
-
-
-        $latestStatus = current($results);
-
-        // TODO mivanci replace artifacts
-        $artifacts = [''];
+        $results = $spEntityId ? $this->getNormalizedResults($spEntityId, $latestOnly) : [];
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
             Routes::PATH_TEST_RESULTS,
         );
         $template->data['serviceProviders'] = $serviceProviders;
-        $template->data['selectedSpEntityId'] = $selectedSpEntityId;
-        $template->data['artifacts'] = $artifacts;
-        $template->data['latestStatus'] = $latestStatus;
+        $template->data['results'] = $results;
+        $template->data['spEntityId'] = $spEntityId;
 
         return $template;
+    }
+
+    /**
+     * @throws AuthorizationException
+     * @throws \JsonException
+     */
+    public function get(Request $request): Response
+    {
+        /** @psalm-suppress InternalMethod */
+        $spEntityId = $request->get('spEntityId');
+        $spEntityId = $spEntityId ? (string)$spEntityId : null;
+        $latestOnly = (bool)$request->get('latestOnly');
+
+        if ($spEntityId) {
+            // Authorization for specific SP.
+            $this->authorization->requireServiceProviderToken($request, $spEntityId);
+        } else {
+            $this->authorization->requireAdministrativeToken($request);
+        }
+
+        return new JsonResponse($this->getNormalizedResults($spEntityId, $latestOnly));
+    }
+
+    protected function getNormalizedResults(?string $spEntityId = null, bool $latestOnly = false): array
+    {
+        $results = [];
+        $rows = $latestOnly ?
+            $this->testResultRepository->getLatest($spEntityId) :
+            $this->testResultRepository->get($spEntityId);
+
+        foreach ($rows as $row) {
+            $results[] = (new TestResultStatus(
+                $row[TestResultRepository::COLUMN_ID],
+                $row[TestResultRepository::COLUMN_ENTITY_ID],
+                $row[TestResultRepository::COLUMN_HAPPENED_AT],
+                $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT],
+                $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS],
+            ))->jsonSerialize();
+        }
+
+        return $results;
     }
 
     /**
