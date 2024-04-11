@@ -5,7 +5,8 @@
 {% block conformanceContent %}
 
   <p>
-    Choose a Service Provider for which you want to list available test results / artifacts.
+      By default, here you can find latest results for all tested service providers.
+      Choose a specific service provider to list its results only.
   </p>
 
   <div class="form-container">
@@ -24,10 +25,20 @@
     </form>
   </div>
 
+  <h4>
+      {% if spEntityId %}
+          All results for {{ spEntityId }}
+      {% else %}
+          Latest results for all tested service providers
+      {% endif %}
+  </h4>
+  <br>
   <div class="results-container">
-    {% if results and spEntityId %}
+    {% if results %}
         {% for result in results %}
-          <span>{{ result.happened_at|date }}</span>
+          <span>
+              {{ result.sp_entity_id }} / {{ result.happened_at|date }}
+          </span>
           <hr>
             <ul>
                 <li><strong>Status:</strong> {{ result.is_ok ? 'OK' : 'FAILING' }}</li>
@@ -54,7 +65,7 @@
 {#      {% endfor %}#}
     {% elseif spEntityId %}
       <p>
-        No entries for selected SP.
+        No entries.
       </p>
     {% endif %}
   </div>

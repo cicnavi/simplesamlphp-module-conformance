@@ -6,7 +6,7 @@ namespace SimpleSAML\Module\conformance\Entities\Nuclei;
 
 use JsonException;
 use JsonSerializable;
-use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
@@ -31,9 +31,8 @@ class TestResultStatus implements JsonSerializable
         ?string $jsonResult = null,
         public readonly ?string $findings = null,
     ) {
-        $this->parsedJsonResult = is_null($jsonResult) ?
-            null :
-            json_decode($jsonResult, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->parsedJsonResult = $this->resolveJsonResult($jsonResult);
     }
 
     public function isOk(): bool
@@ -96,5 +95,23 @@ class TestResultStatus implements JsonSerializable
             self::COLUMN_IS_OK => $this->isOk(),
             self::DESCRIPTION => $this->getDescription(),
         ];
+    }
+
+    /**
+     * @throws ConformanceException
+     * @throws JsonException
+     */
+    protected function resolveJsonResult(?string $jsonResult): ?array
+    {
+        /** @psalm-suppress MixedAssignment */
+        $jsonResult = is_null($jsonResult) ?
+            null :
+            json_decode($jsonResult, true, 512, JSON_THROW_ON_ERROR);
+
+        if (is_null($jsonResult) || is_array($jsonResult)) {
+            return $jsonResult;
+        }
+
+        throw new ConformanceException('Unexpected JSON Result value');
     }
 }

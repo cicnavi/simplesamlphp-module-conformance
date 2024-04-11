@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance;
+namespace SimpleSAML\Module\conformance\Nuclei;
 
-use Psr\Log\LoggerInterface;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\Helpers;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
+use SimpleSAML\Module\conformance\SspBridge;
 
-class NucleiEnv
+class Env
 {
     public const KEY_NUCLEI = 'nuclei';
 
@@ -62,7 +64,7 @@ class NucleiEnv
      */
     public function prepareCommand(
         string $spEntityId,
-        string $ascUrl,
+        string $acsUrl,
         string $token,
         string $testId = null,
     ): string {
@@ -72,7 +74,7 @@ class NucleiEnv
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
-        $acsUrl = escapeshellarg($ascUrl);
+        $acsUrl = escapeshellarg($acsUrl);
         $conformanceIdPHostname = parse_url($this->conformanceIdpBaseUrl, PHP_URL_HOST);
         $nucleiSecretFile = <<<HEREDOC
 static:
@@ -94,7 +96,7 @@ HEREDOC;
             "cd $this->dataDir; " .
             "mkdir -p $spTestResultsDir; " .
             "nuclei " .
-            "-config {$this->configFile} " .
+            "-config $this->configFile " .
             "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
@@ -122,7 +124,7 @@ HEREDOC;
         // Currently no result exports because of the false positive matches with headless browser.
         $command .=
             "nuclei " .
-            "-config {$this->configFile} " .
+            "-config $this->configFile " .
             "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
@@ -168,7 +170,7 @@ HEREDOC;
     /**
      * @throws ConformanceException
      */
-    public function setTemplateId(string $templateId): NucleiEnv
+    public function setTemplateId(string $templateId): Env
     {
         if (in_array($templateId, self::NUCLEI_TEMPLATES)) {
             $this->templateId = $templateId;

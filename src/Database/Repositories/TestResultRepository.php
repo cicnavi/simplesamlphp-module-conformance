@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Database\Repositories;
 
-use DateTimeImmutable;
 use PDO;
 use SimpleSAML\Module\conformance\Database\AbstractDbEntity;
 
@@ -54,6 +53,9 @@ class TestResultRepository extends AbstractDbEntity
         );
     }
 
+    /**
+     * @return array[]
+     */
     public function get(string $spEntityId = null, int $limit = 100, int $offset = 0): array
     {
         // Build read statement
@@ -76,6 +78,9 @@ class TestResultRepository extends AbstractDbEntity
         return $rows ?: [];
     }
 
+    /**
+     * @return array[]
+     */
     public function getLatest(string $spEntityId = null, int $limit = 100, int $offset = 0): array
     {
         $sql = "SELECT ctr.* FROM {$this->getPrefixedTableName()} as ctr ";

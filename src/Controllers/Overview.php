@@ -12,7 +12,7 @@ use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
-use SimpleSAML\Module\conformance\NucleiEnv;
+use SimpleSAML\Module\conformance\Nuclei\Env;
 use SimpleSAML\Module\conformance\SspBridge;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +28,7 @@ class Overview
         protected Migrator $migrator,
         protected GenericStatusFactory $genericStatusFactory,
         protected SspBridge $sspBridge,
-        protected NucleiEnv $nucleiEnv,
+        protected Env $nucleiEnv,
         protected Helpers $helpers,
     ) {
         $this->authorization->requireSimpleSAMLphpAdmin(true);

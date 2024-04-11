@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance\BulkTest;
+namespace SimpleSAML\Module\conformance\Nuclei\BulkTest;
 
 use DateInterval;
 use DateTimeImmutable;
@@ -13,8 +13,8 @@ class State
     final public const DEFAULT_NUMBER_OF_MESSAGES_TO_KEEP = 10;
     protected DateTimeImmutable $updatedAt;
     protected ?DateTimeImmutable $endedAt = null;
-    protected int $successfulJobsProcessed = 0;
-    protected int $failedJobsProcessed = 0;
+    protected int $successfulTestsProcessed = 0;
+    protected int $failedTestsProcessed = 0;
     /**
      * @var string[]
      */
@@ -106,30 +106,30 @@ class State
         return $this->startedAt !== null;
     }
 
-    public function incrementSuccessfulJobsProcessed(): void
+    public function incrementSuccessfulTestsProcessed(): void
     {
-        $this->successfulJobsProcessed++;
+        $this->successfulTestsProcessed++;
     }
 
-    public function incrementFailedJobsProcessed(): void
+    public function incrementFailedTestsProcessed(): void
     {
-        $this->failedJobsProcessed++;
-    }
-
-    /**
-     * @return int
-     */
-    public function getSuccessfulJobsProcessed(): int
-    {
-        return $this->successfulJobsProcessed;
+        $this->failedTestsProcessed++;
     }
 
     /**
      * @return int
      */
-    public function getFailedJobsProcessed(): int
+    public function getSuccessfulTestsProcessed(): int
     {
-        return $this->failedJobsProcessed;
+        return $this->successfulTestsProcessed;
+    }
+
+    /**
+     * @return int
+     */
+    public function getFailedTestsProcessed(): int
+    {
+        return $this->failedTestsProcessed;
     }
 
     public function isStale(DateInterval $threshold): bool
@@ -143,9 +143,9 @@ class State
         return false;
     }
 
-    public function getTotalJobsProcessed(): int
+    public function getTotalTestsProcessed(): int
     {
-        return $this->getSuccessfulJobsProcessed() + $this->getFailedJobsProcessed();
+        return $this->getSuccessfulTestsProcessed() + $this->getFailedTestsProcessed();
     }
 
     public function addStatusMessage(string $message): void

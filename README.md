@@ -6,9 +6,13 @@ SimpleSAMLphp module provides conformance functionality using SimpleSAMLphp auth
 
 ## Features
 
-- authentication processing filter that can modify SAML Responses, that is, create invalid ones in order to test SP behavior
-- ability to run Nuclei tests from the module UI
-- API which enables programmatic control and execution of tests
+- authentication processing filter that can modify SAML Responses, that is, create invalid ones in order to test SP
+behavior
+- ability to run tests from the module UI
+- ability to run bulk tests using the cron feature in SimpleSAMLphp
+- API, which:
+  - enables programmatic control and execution of tests
+  - exposes test results in JSON format
 
 ## Installation
 
@@ -63,7 +67,7 @@ SimpleSAMLphp (web server) has to be able to run it.
 
 The Nuclei working directory will be the one set in the 'datadir' option in config/config.php. Make sure that
 SimpleSAMLphp can write to it. This directory will be used to store Nuclei related data like its internal config and
-cache... It will also be used to store any test result artifacts like JSON reports, screenshots, etc.
+cache... It will also be used to store any temporary test result artifacts like JSON reports, screenshots, etc.
 
 ### Sending emails
 
@@ -88,6 +92,10 @@ in config/config.php:
 // ...
 ```
 
+## Running tests
+
+
+
 ## API
 
 API endpoints are protected with Authorization Bearer token. Available access tokens can be preset in
@@ -107,9 +115,10 @@ Authorization: Bearer sometoken
 
 Available endpoints are described below.
 
-### Test modification
+### Test setup for next authentication event
 
-Endpoint to define next test for particular SP.
+Endpoint to define the next test for particular SP. This will determine the shape of the SAML response in the next
+authentication event for the given service provider.
 
 URI: `https://conformance-idp.example.com/module.php/conformance/test/setup`
 
@@ -127,10 +136,24 @@ Parameters:
   - valid values: any trusted SP Entity ID
   - example: `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
 
-For example, to specify that the next test for the SP `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
-should be the one that doesn't sign the SAML Response, make a HTTP GET request to:
+For example, to specify that the next SAML response for the SP `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
+should be the one without signature, make an HTTP GET request to:
 
 `https://conformance-idp.example.com/module.php/conformance/test/setup?testId=noSignature&spEntityId=urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
+
+### Running Nuclei tests using predefined templates
+
+Endpoint which can be used to run all the Nuclei tests on a particular service provider using the predefined templates.
+This is the same as running Nuclei tests from the Conformance module UI. 
+The HTTP response is a streamed output from the Nuclei tool.
+
+URI: `https://conformance-idp.example.com/module.php/conformance/test/run`
+
+Parameters:
+- spEntityId
+  - valid values: any trusted SP Entity ID
+  - example: `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
+- TODO mivanci continue
 
 ### SP metadata provisioning
 
@@ -169,7 +192,7 @@ Sample URI to initiate login to SP 'urn:x-simplesamlphp:geant:incubator:simplesa
 
 `https://conformance-idp.example.com/saml2/idp/SSOService.php?spentityid=urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
 
-## Tests
+## Static analysis and unit tests
 
 To run phpcs, psalm and phpunit:
 

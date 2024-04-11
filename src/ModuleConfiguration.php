@@ -165,7 +165,11 @@ class ModuleConfiguration
         );
     }
 
-    public function getCronTagForBulkTestRunner()
+    public function getCronTagForBulkTestRunner(): string
     {
+        return $this->getConfig()->getOptionalString(
+            self::OPTION_CRON_TAG_FOR_BULK_TEST_RUNNER,
+            'conformance_bulk_test_runner'
+        );
     }
 }

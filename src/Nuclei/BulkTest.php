@@ -2,35 +2,26 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance\Controllers;
+namespace SimpleSAML\Module\conformance\Nuclei;
 
 use Cicnavi\SimpleFileCache\SimpleFileCache;
 use DateInterval;
 use DateTimeImmutable;
 use Exception;
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
-use SimpleSAML\Module\conformance\BulkTest\State;
-use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRepository;
-use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 use SimpleSAML\Module\conformance\Factories\BulkTestStateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
-use SimpleSAML\Module\conformance\NucleiEnv;
-use SimpleSAML\Module\conformance\SpConsentHandler;
+use SimpleSAML\Module\conformance\Nuclei\BulkTest\State;
 use SimpleSAML\Module\conformance\SspBridge;
-use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 use UnexpectedValueException;
 
-class Runner
+class BulkTest
 {
-    protected const KEY_ASSERTION_CONSUMER_SERVICE = 'AssertionConsumerService';
-    protected const KEY_LOCATION = 'Location';
-
     /**
      * Interval after which the state will be considered stale.
      */
@@ -50,10 +41,7 @@ class Runner
         protected Helpers $helpers,
         protected BulkTestStateFactory $bulkTestStateFactory,
         protected MetaDataStorageHandler $metaDataStorageHandler,
-        protected SpConsentRepository $spConsentRepository,
-        protected SpConsentHandler $spConsentHandler,
-        protected TestResultRepository $testResultRepository,
-        protected NucleiEnv $nucleiEnv,
+        protected TestRunner $nucleiTestRunner,
         protected LoggerInterface $logger,
         CacheInterface $cache = null,
     ) {
@@ -65,7 +53,7 @@ class Runner
         $this->registerInterruptHandler();
     }
 
-    public function run(): Response
+    public function run(): State
     {
         try {
             $this->validatePreRunState();
@@ -97,166 +85,34 @@ class Runner
         // We have a clean state, we can start processing.
         while (
             $this->shouldRun() &&
-            ($spEntityId = key($serviceProviders)) &&
-            ($spMetadataArray = current($serviceProviders))
+            ($spEntityId = (string)key($serviceProviders))
         ) {
             next($serviceProviders);
 
             try {
                 $this->updateCachedState($this->state);
 
-                // TODO mivanci extract as this is the same code as in NucleiTest controller
-                // We have trusted SP. Handle consent if needed.
-                if (
-                    $this->spConsentHandler->shouldValidateConsentForSp($spEntityId) &&
-                    (! $this->spConsentHandler->isConsentedForSp($spEntityId))
-                ) {
-                    $message = 'SP consent is required to run tests. ';
-                    if (! $this->spConsentHandler->isRequestedForSp($spEntityId)) {
-                        try {
-                            $this->spConsentHandler->requestForSp($spEntityId, $spMetadataArray);
-                            $message .= 'Request for consent has now been sent.';
-                        } catch (\Throwable $exception) {
-                            $message .= 'Error requesting consent: ' . $exception->getMessage();
-                        }
-                    } else {
-                        $message .= 'Consent has already been requested, but still not accepted.';
-                    }
-
-                    $this->state->incrementFailedJobsProcessed();
-                    $this->state->addStatusMessage("Consent for SP $spEntityId: " . $message);
-                    continue;
-                }
-
                 $this->state->addStatusMessage("Starting with tests for: $spEntityId");
-
-                $spMetadataConfig = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, SspBridge::KEY_SET_SP_REMOTE);
-
-                // TODO mivanci extract as this is the same code as in NucleiTest controller
-                try {
-                    /** @psalm-suppress MixedAssignment */
-                    $acsUrl = $spMetadataConfig->getDefaultEndpoint(self::KEY_ASSERTION_CONSUMER_SERVICE);
-                } catch (\Throwable $exception) {
-                    $this->state->addStatusMessage("ACS URL for SP $spEntityId: Could not resolve Assertion Consumer Service (ACS).");
-                    continue;
-                }
-
-                if (is_array($acsUrl)) {
-                    $acsUrl = (string)($acsUrl[self::KEY_LOCATION] ?? '');
-                } else {
-                    $acsUrl = (string)$acsUrl;
-                }
-
                 $token = $this->moduleConfiguration->getLocalTestRunnerToken();
 
-                $command = $this->nucleiEnv->prepareCommand($spEntityId, $acsUrl, $token);
+                $this->nucleiTestRunner->run($token, $spEntityId);
 
-                $this->state->addStatusMessage("Command: $command");
-
-                echo $command;
-                `$command`;
-
-                $message = 'Storing results to database.';
-                $this->logger->debug($message);
-                $this->state->addStatusMessage($message);
-
-                // TODO store test results to DB
-                $this->nucleiEnv->getSpTestResultsDir($spEntityId);
-
-                $files = [];
-                if (file_exists($resultsDir = $this->nucleiEnv->getSpResultsDir($spEntityId))) {
-                    $files = $this->helpers->filesystem()->listFilesInDirectory(
-                        $resultsDir,
-                        Helpers\Filesystem::KEY_SORT_DESC,
-                    );
-                }
-
-                $artifacts = [];
-
-                // Key by datetime
-                foreach ($files as $artifact) {
-                    $elements = explode(DIRECTORY_SEPARATOR, $artifact, 2);
-
-                    if (count($elements) !== 2) {
-                        continue;
-                    }
-
-                    if (isset($artifacts[$elements[0]])) {
-                        $artifacts[$elements[0]][] =  $elements[1];
-                    } else {
-                        $artifacts[$elements[0]] = [$elements[1]];
-                    }
-                }
-
-                // TODO mivanci move to factory
-                $latestStatus = null;
-                $latestTimestamp = key($artifacts);
-                $latestArtifacts = current($artifacts);
-                if (
-                    (!is_null($latestTimestamp)) &&
-                    is_array($latestArtifacts)
-                ) {
-                    $jsonResult = null;
-                    if (
-                        in_array(NucleiEnv::FILE_JSON_EXPORT, $latestArtifacts) &&
-                        file_exists(
-                            $jsonResultPath = $this->helpers->filesystem()->getPathFromElements(
-                                $this->nucleiEnv->getSpResultsDir($spEntityId),
-                                strval($latestTimestamp),
-                                NucleiEnv::FILE_JSON_EXPORT
-                            )
-                        ) &&
-                        $jsonResultContent = file_get_contents($jsonResultPath)
-                    ) {
-                        $jsonResult = $jsonResultContent;
-                    }
-
-                    $findings = null;
-                    if (
-                        in_array(NucleiEnv::FILE_FINDINGS_EXPORT, $latestArtifacts) &&
-                        file_exists(
-                            $findingsPath = $this->helpers->filesystem()->getPathFromElements(
-                                $this->nucleiEnv->getSpResultsDir($spEntityId),
-                                strval($latestTimestamp),
-                                NucleiEnv::FILE_FINDINGS_EXPORT
-                            )
-                        ) &&
-                        $findingsContent = file_get_contents($findingsPath)
-                    ) {
-                        $findings = $findingsContent;
-                    }
-
-                    $this->testResultRepository->addForSp(
-                        $spEntityId,
-                        $latestTimestamp,
-                        $jsonResult,
-                        $findings,
-                    );
-                    $this->testResultRepository->deleteObsolete(
-                        $spEntityId,
-                        $this->moduleConfiguration->getNumberOfResultsToKeepPerSp()
-                    );
-                }
-
-                $this->state->incrementSuccessfulJobsProcessed();
+                $this->state->incrementSuccessfulTestsProcessed();
                 $successMessage = sprintf('Successfully processed test with for SP %s.', $spEntityId);
                 $this->logger->debug($successMessage);
                 $this->state->addStatusMessage($successMessage);
             } catch (Throwable $exception) {
-                $message = sprintf('Error while processing tests. Error was: %s', $exception->getMessage());
+                $message = sprintf('Error with test processing: %s', $exception->getMessage());
                 $context = ['spEntityId' => $spEntityId];
                 $this->logger->error($message, $context);
-                $this->state->incrementFailedJobsProcessed();
+                $this->state->incrementFailedTestsProcessed();
                 $this->state->addStatusMessage($message);
             }
         }
 
         $this->clearCachedState();
         $this->state->setEndedAt(new DateTimeImmutable());
-
-        return new Response(var_dump($this->state->getStatusMessages(), true));
-
-        return $state;
+        return $this->state;
     }
 
     /**
@@ -265,8 +121,8 @@ class Runner
     {
         // Enable this code to tick, which will enable it to catch CTRL-C signals and stop gracefully.
         declare(ticks=1) {
-            if ($this->state->getTotalJobsProcessed() > (PHP_INT_MAX - 1)) {
-                $message = 'Maximum number of processed jobs reached.';
+            if ($this->state->getTotalTestsProcessed() > (PHP_INT_MAX - 1)) {
+                $message = 'Maximum number of processed tests reached.';
                 $this->logger->debug($message);
                 $this->state->addStatusMessage($message);
                 return false;
@@ -353,7 +209,7 @@ class Runner
         // Validate state after start.
         if ($this->state->hasRunStarted() === true) {
             if ($cachedState === null) {
-                $message = 'Job run has started, however cached state has not been initialized.';
+                $message = 'Test run has started, however cached state has not been initialized.';
                 throw new Exception($message);
             }
 
@@ -369,13 +225,13 @@ class Runner
             }
 
             if ($cachedState->getIsGracefulInterruptInitiated()) {
-                $message = 'Graceful job processing interrupt initiated.';
+                $message = 'Graceful test processing interrupt initiated.';
                 throw new Exception($message);
             }
         }
     }
 
-    protected function isAnotherJobRunnerActive(): bool
+    protected function isAnotherRunnerActive(): bool
     {
         try {
             $cachedState = $this->getCachedState();
@@ -517,7 +373,7 @@ class Runner
      */
     protected function validateRunConditions(): void
     {
-        if ($this->isAnotherJobRunnerActive()) {
+        if ($this->isAnotherRunnerActive()) {
             $message = 'Another test runner is active.';
             $this->logger->debug($message);
             throw new Exception($message);
@@ -530,7 +386,7 @@ class Runner
     }
 
     /**
-     * Register interrupt handler. This makes it possible to stop job processing gracefully by
+     * Register interrupt handler. This makes it possible to gracefully stop processing by
      * clearing the current state. It relies on pcntl extension, so to use this feature,
      * that extension has to be enabled.
      * @see https://www.php.net/manual/en/pcntl.installation.php
@@ -562,7 +418,7 @@ class Runner
      */
     protected function handleInterrupt(int $signal): void
     {
-        $message = sprintf('Gracefully stopping job processing. Interrupt signal was %s.', $signal);
+        $message = sprintf('Gracefully stopping processing. Interrupt signal was %s.', $signal);
         $this->state->addStatusMessage($message);
         $this->logger->info($message);
         $this->state->setIsGracefulInterruptInitiated(true);

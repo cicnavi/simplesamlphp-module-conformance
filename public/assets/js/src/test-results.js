@@ -4,9 +4,7 @@
     const spEntityIdSelect = document.getElementById('spEntityId');
 
     spEntityIdSelect.addEventListener('change', function () {
-        if (spEntityIdSelect.value) {
-            resultsFormElement.submit();
-        }
+        resultsFormElement.submit();
     });
 })();
 

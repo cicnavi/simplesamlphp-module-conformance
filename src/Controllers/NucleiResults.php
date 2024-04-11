@@ -17,7 +17,7 @@ use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
-use SimpleSAML\Module\conformance\NucleiEnv;
+use SimpleSAML\Module\conformance\Nuclei\Env;
 use SimpleSAML\Module\conformance\SspBridge;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -35,7 +35,7 @@ class NucleiResults
         protected TemplateFactory $templateFactory,
         protected Authorization $authorization,
         protected MetaDataStorageHandler $metaDataStorageHandler,
-        protected NucleiEnv $nucleiEnv,
+        protected Env $nucleiEnv,
         protected Helpers $helpers,
         protected LoggerInterface $logger,
         protected TestResultRepository $testResultRepository,
@@ -53,12 +53,15 @@ class NucleiResults
 
         $serviceProviders = $this->metaDataStorageHandler->getList(SspBridge::KEY_SET_SP_REMOTE);
 
-        /** @psalm-suppress InternalMethod */
+        /** @psalm-suppress InternalMethod, MixedAssignment */
         $spEntityId = $request->get('spEntityId');
         $spEntityId = $spEntityId ? (string)$spEntityId : null;
+        /** @psalm-suppress InternalMethod */
         $latestOnly = (bool)$request->get('latestOnly');
 
-        $results = $spEntityId ? $this->getNormalizedResults($spEntityId, $latestOnly) : [];
+        $results = $spEntityId ?
+            $this->getNormalizedResults($spEntityId, $latestOnly) :
+            $this->getNormalizedResults(null, true);
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
@@ -77,9 +80,10 @@ class NucleiResults
      */
     public function get(Request $request): Response
     {
-        /** @psalm-suppress InternalMethod */
+        /** @psalm-suppress InternalMethod, MixedAssignment */
         $spEntityId = $request->get('spEntityId');
         $spEntityId = $spEntityId ? (string)$spEntityId : null;
+        /** @psalm-suppress InternalMethod */
         $latestOnly = (bool)$request->get('latestOnly');
 
         if ($spEntityId) {
@@ -101,11 +105,13 @@ class NucleiResults
 
         foreach ($rows as $row) {
             $results[] = (new TestResultStatus(
-                $row[TestResultRepository::COLUMN_ID],
-                $row[TestResultRepository::COLUMN_ENTITY_ID],
-                $row[TestResultRepository::COLUMN_HAPPENED_AT],
-                $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT],
-                $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS],
+                (int)$row[TestResultRepository::COLUMN_ID],
+                (string)$row[TestResultRepository::COLUMN_ENTITY_ID],
+                (int)$row[TestResultRepository::COLUMN_HAPPENED_AT],
+                $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT] ?
+                    (string)$row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT] : null,
+                $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS] ?
+                    (string)$row[TestResultRepository::COLUMN_NUCLEI_FINDINGS] : null,
             ))->jsonSerialize();
         }
 

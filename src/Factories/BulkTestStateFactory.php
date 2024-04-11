@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Factories;
 
-use SimpleSAML\Module\conformance\BulkTest\State;
+use SimpleSAML\Module\conformance\Nuclei\BulkTest\State;
 
 class BulkTestStateFactory
 {
