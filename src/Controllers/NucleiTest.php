@@ -103,7 +103,7 @@ class NucleiTest
         $this->logger->debug('Nuclei command to run: ' . $command);
 
         return new StreamedResponse(
-            function () use ($spEntityId, $command, $token): void {
+            function () use ($spEntityId, $command): void {
                 $descriptors = [
                     0 => ['pipe', 'r'],  // stdin
                     1 => ['pipe', 'w'],  // stdout
@@ -124,9 +124,9 @@ class NucleiTest
                 fclose($pipes[0]);
 
                 // Command print.
-//                echo str_replace([$token], 'hidden', $command);
-//                flush();
-//                ob_flush();
+            //                echo str_replace([$token], 'hidden', $command);
+            //                flush();
+            //                ob_flush();
 
                 // Read the output stream and send it to the browser in chunks
                 while (!feof($pipes[1])) {

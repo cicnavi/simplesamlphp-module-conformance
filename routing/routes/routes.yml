@@ -38,7 +38,7 @@ conformance-nuclei-test-fetch-acss:
   methods:
     - GET
 
-conformance-nuclei-test-run:
+conformance-test-run:
   path: /nuclei/test/run
   controller: SimpleSAML\Module\conformance\Controllers\NucleiTest::run
   methods:

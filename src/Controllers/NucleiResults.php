@@ -61,7 +61,7 @@ class NucleiResults
 
         $results = $spEntityId ?
             $this->getNormalizedResults($spEntityId, $latestOnly) :
-            $this->getNormalizedResults(null, true);
+        $this->getNormalizedResults(null, true);
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
