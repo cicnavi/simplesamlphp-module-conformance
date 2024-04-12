@@ -16,7 +16,7 @@ class SspBridge
     protected static ?Utils $utils = null;
     protected static ?Module $module = null;
     protected static ?Auth $auth = null;
-    protected static ?Metadata $metadata;
+    protected static ?Metadata $metadata = null;
 
     public function utils(): Utils
     {

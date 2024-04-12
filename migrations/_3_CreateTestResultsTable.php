@@ -5,7 +5,7 @@ declare(strict_types=1);
 use SimpleSAML\Module\conformance\Database\AbstractDbEntity;
 use SimpleSAML\Module\conformance\Database\MigrationInterface;
 
-class _2_CreateSpConsentRequestsTable extends AbstractDbEntity implements MigrationInterface
+class _3_CreateTestResultsTable extends AbstractDbEntity implements MigrationInterface
 {
     public function run(): void
     {
@@ -13,10 +13,10 @@ class _2_CreateSpConsentRequestsTable extends AbstractDbEntity implements Migrat
         CREATE TABLE {$this->getPrefixedTableName()} (
             id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
             entity_id VARCHAR(255) NOT NULL,
-            challenge char(64) NOT NULL,
-            contact_email VARCHAR(255) NOT NULL,
-            created_at BIGINT UNSIGNED NOT NULL,
-            KEY (entity_id)
+            happened_at BIGINT UNSIGNED NOT NULL,
+            nuclei_json_result JSON NULL,
+            nuclei_findings TEXT NULL,
+            UNIQUE (entity_id, happened_at)
         )
 EOT
         );
@@ -24,6 +24,6 @@ EOT
 
     public static function getTableName(): string
     {
-        return 'sp_consent_requests';
+        return 'test_results';
     }
 }

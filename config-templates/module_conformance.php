@@ -64,4 +64,8 @@ $config = [
         // 'sp-entity-id',
     ],
 
+    /**
+     * Cron tag for bulk test runner.
+     */
+    ModuleConfiguration::OPTION_CRON_TAG_FOR_BULK_TEST_RUNNER => 'conformance_bulk_test_runner',
 ];

@@ -4,19 +4,35 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Entities\Nuclei;
 
-use SimpleSAML\Module\conformance\NucleiEnv;
+use JsonException;
+use JsonSerializable;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
-class TestResultStatus
+class TestResultStatus implements JsonSerializable
 {
+    final public const COLUMN_ID = 'id';
+    final public const COLUMN_SP_ENTITY_ID = 'sp_entity_id';
+    final public const COLUMN_HAPPENED_AT = 'happened_at';
+    final public const COLUMN_IS_OK = 'is_ok';
+    final public const DESCRIPTION = 'description';
+
+    public readonly ?array $parsedJsonResult;
+
+    /**
+     * @throws JsonException
+     */
     public function __construct(
+        public readonly int $id,
         public readonly string $spEntityId,
-        public readonly int $timestamp,
-        public readonly ?array $parsedJsonResult = null,
+        public readonly int $happenedAt,
+        ?string $jsonResult = null,
         public readonly ?string $findings = null,
     ) {
+
+        $this->parsedJsonResult = $this->resolveJsonResult($jsonResult);
     }
 
     public function isOk(): bool
@@ -68,5 +84,34 @@ class TestResultStatus
         }
 
         return 'Passed without findings.';
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            self::COLUMN_ID => $this->id,
+            self::COLUMN_SP_ENTITY_ID => $this->spEntityId,
+            self::COLUMN_HAPPENED_AT => $this->happenedAt,
+            self::COLUMN_IS_OK => $this->isOk(),
+            self::DESCRIPTION => $this->getDescription(),
+        ];
+    }
+
+    /**
+     * @throws ConformanceException
+     * @throws JsonException
+     */
+    protected function resolveJsonResult(?string $jsonResult): ?array
+    {
+        /** @psalm-suppress MixedAssignment */
+        $jsonResult = is_null($jsonResult) ?
+            null :
+            json_decode($jsonResult, true, 512, JSON_THROW_ON_ERROR);
+
+        if (is_null($jsonResult) || is_array($jsonResult)) {
+            return $jsonResult;
+        }
+
+        throw new ConformanceException('Unexpected JSON Result value');
     }
 }

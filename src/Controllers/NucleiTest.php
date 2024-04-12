@@ -13,9 +13,8 @@ use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
-use SimpleSAML\Module\conformance\NucleiEnv;
+use SimpleSAML\Module\conformance\Nuclei\TestRunner;
 use SimpleSAML\Module\conformance\Responder\ResponderResolver;
-use SimpleSAML\Module\conformance\SpConsentHandler;
 use SimpleSAML\Module\conformance\SspBridge;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,9 +37,8 @@ class NucleiTest
         protected Helpers $helpers,
         protected TemplateFactory $templateFactory,
         protected Authorization $authorization,
+        protected TestRunner $nucleiTestRunner,
         protected MetaDataStorageHandler $metaDataStorageHandler,
-        protected NucleiEnv $nucleiEnv,
-        protected SpConsentHandler $spConsentHandler,
         protected LoggerInterface $logger,
     ) {
     }
@@ -82,95 +80,37 @@ class NucleiTest
             });
         }
 
+        /** @psalm-suppress MixedAssignment */
+        $acsUrl = $request->get('acsUrl');
+        $acsUrl = empty($acsUrl) ? null : (string)$acsUrl;
+
         $this->authorization->requireServiceProviderToken($request, $spEntityId);
 
-        try {
-            $spMetadata = $this->metaDataStorageHandler->getMetaDataConfig($spEntityId, SspBridge::KEY_SET_SP_REMOTE);
-        } catch (\Throwable $exception) {
-            return new StreamedResponse(function () {
-                echo 'No metadata for provided SP.';
-            });
-        }
-
-        // We have trusted SP. Handle consent if needed.
-        if (
-            $this->spConsentHandler->shouldValidateConsentForSp($spEntityId) &&
-            (! $this->spConsentHandler->isConsentedForSp($spEntityId))
-        ) {
-            $message = 'SP consent is required to run tests. ';
-            if (! $this->spConsentHandler->isRequestedForSp($spEntityId)) {
-                try {
-                    $this->spConsentHandler->requestForSp($spEntityId, $spMetadata->toArray());
-                    $message .= 'Request for consent has now been sent.';
-                } catch (\Throwable $exception) {
-                    $message .= 'Error requesting consent: ' . $exception->getMessage();
-                }
-            } else {
-                $message .= 'Consent has already been requested, but still not accepted.';
-            }
-            return new StreamedResponse(function () use ($message) {
-                echo $message;
-            });
-        }
+        $token = $this->moduleConfiguration->getLocalTestRunnerToken();
+        $this->nucleiTestRunner->env->enableDebug = (bool) $request->get('enableDebug');
+        $this->nucleiTestRunner->env->enableVerbose = (bool) $request->get('enableVerbose');
 
         try {
-            /** @psalm-suppress MixedAssignment */
-            $acsUrl = $request->get('acsUrl') ??
-                $spMetadata->getDefaultEndpoint(self::KEY_ASSERTION_CONSUMER_SERVICE);
+            $command = $this->nucleiTestRunner->prepareCommand($token, $spEntityId, $acsUrl, $testId);
         } catch (\Throwable $exception) {
-            return new StreamedResponse(function () {
-                echo "Could not resolve Assertion Consumer Service (ACS).";
+            return new StreamedResponse(function () use ($exception) {
+                echo 'Error while preparing command: ' . $exception->getMessage();
             });
         }
-
-        if (is_array($acsUrl)) {
-            $acsUrl = (string)($acsUrl[self::KEY_LOCATION] ?? '');
-        } else {
-            $acsUrl = (string)$acsUrl;
-        }
-
-        // TODO mivanci remove if not necessary.
-        /** @psalm-suppress MixedAssignment */
-//        $templateId = $request->get('templateId');
-//        $templateId = empty($templateId) ? null : (string)$templateId;
-//
-//        if (!empty($templateId)) {
-//            try {
-//                $this->nucleiEnv->setTemplateId($templateId);
-//            } catch (ConformanceException $exception) {
-//                return new StreamedResponse(function () use ($templateId, $exception) {
-//                    echo "Error setting template ID $templateId. Error was: {$exception->getMessage()}";
-//                });
-//            }
-//        }
 
         $headers = ['Content-Type' =>  'text/plain', 'Content-Encoding' => 'chunked'];
-
-        $this->nucleiEnv->enableDebug = (bool) $request->get('enableDebug');
-        $this->nucleiEnv->enableVerbose = (bool) $request->get('enableVerbose');
-        // TODO mivanci remove if not necessary.
-//        $this->nucleiEnv->enableOutputExport = (bool) $request->get('enableOutputExport');
-//        $this->nucleiEnv->enableFindingsExport = (bool) $request->get('enableFindingsExport');
-//        $this->nucleiEnv->enableJsonExport = (bool) $request->get('enableJsonExport');
-//        $this->nucleiEnv->enableJsonLExport = (bool) $request->get('enableJsonLExport');
-//        $this->nucleiEnv->enableSarifExport = (bool) $request->get('enableSarifExport');
-//        $this->nucleiEnv->enableMarkdownExport = (bool) $request->get('enableMarkdownExport');
-
-        $token = $this->moduleConfiguration->getLocalTestRunnerToken();
-
-        $command = $this->nucleiEnv->prepareCommand($spEntityId, $acsUrl, $token, $testId);
 
         $this->logger->debug('Nuclei command to run: ' . $command);
 
         return new StreamedResponse(
-            function () use ($command, $token): void {
+            function () use ($spEntityId, $command): void {
                 $descriptors = [
                     0 => ['pipe', 'r'],  // stdin
                     1 => ['pipe', 'w'],  // stdout
                     2 => ['pipe', 'w']   // stderr
                 ];
 
-                $process = proc_open($command, $descriptors, $pipes, $this->nucleiEnv->dataDir);
+                $process = proc_open($command, $descriptors, $pipes, $this->nucleiTestRunner->env->dataDir);
 
                 // Check if the process was successfully started
                 if (!is_resource($process)) {
@@ -184,9 +124,9 @@ class NucleiTest
                 fclose($pipes[0]);
 
                 // Command print.
-                echo str_replace([$token], 'hidden', $command);
-                flush();
-                ob_flush();
+            //                echo str_replace([$token], 'hidden', $command);
+            //                flush();
+            //                ob_flush();
 
                 // Read the output stream and send it to the browser in chunks
                 while (!feof($pipes[1])) {
@@ -218,6 +158,8 @@ class NucleiTest
             //                echo "Process status: " . var_export($procStatus, true);
 
                 $exitCode = proc_close($process);
+
+                $this->nucleiTestRunner->persistLatestResults($spEntityId);
 
                 echo "Exit code: $exitCode \n";
                 flush();

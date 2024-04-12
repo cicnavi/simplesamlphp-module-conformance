@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace SimpleSAML\Module\conformance;
+namespace SimpleSAML\Module\conformance\Nuclei;
 
-use Psr\Log\LoggerInterface;
 use SimpleSAML\Configuration;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
+use SimpleSAML\Module\conformance\Helpers;
+use SimpleSAML\Module\conformance\ModuleConfiguration;
+use SimpleSAML\Module\conformance\SspBridge;
 
-class NucleiEnv
+class Env
 {
     public const KEY_NUCLEI = 'nuclei';
 
@@ -62,16 +64,17 @@ class NucleiEnv
      */
     public function prepareCommand(
         string $spEntityId,
-        string $ascUrl,
+        string $acsUrl,
         string $token,
         string $testId = null,
     ): string {
+        $spResultsDir = $this->getSpResultsDir($spEntityId);
         $spTestResultsDir = $this->getSpTestResultsDir($spEntityId);
         $screenshotsDir = $this->helpers->filesystem()->getPathFromElements($spTestResultsDir, 'pictures');
 
         // Escape shell args.
         $spEntityId = escapeshellarg($spEntityId);
-        $acsUrl = escapeshellarg($ascUrl);
+        $acsUrl = escapeshellarg($acsUrl);
         $conformanceIdPHostname = parse_url($this->conformanceIdpBaseUrl, PHP_URL_HOST);
         $nucleiSecretFile = <<<HEREDOC
 static:
@@ -90,9 +93,10 @@ HEREDOC;
         $this->templateId = self::NUCLEI_TEMPLATE_SAML_RAW_ALL;
 
         $command =
+            "cd $this->dataDir; " .
             "mkdir -p $spTestResultsDir; " .
             "nuclei " .
-            "-config {$this->configFile} " .
+            "-config $this->configFile " .
             "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
@@ -120,7 +124,7 @@ HEREDOC;
         // Currently no result exports because of the false positive matches with headless browser.
         $command .=
             "nuclei " .
-            "-config {$this->configFile} " .
+            "-config $this->configFile " .
             "-target $acsUrl " .
             "-env-vars -headless -matcher-status -follow-redirects -disable-update-check -timestamp " .
             "-no-mhe -restrict-local-network-access -dialer-keep-alive 30 -dialer-timeout 30 " .
@@ -141,7 +145,7 @@ HEREDOC;
             "rm $nucleiSecretFilePath; " . # remove nuclei secret file
             "find $spTestResultsDir -type f -exec sed -i 's/$token/hidden/g' {} +; " . # Remove token from exports
             // phpcs:ignore
-            "find $spTestResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spTestResultsDir/'{}'" # Limit number of results per SP
+            "find $spResultsDir -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' | sort -n | head -n -$this->numberOfResultsToKeepPerSp | xargs -r -I '{}' rm -rf $spResultsDir/'{}'" # Limit number of results per SP
         ;
 
         return $command;
@@ -166,7 +170,7 @@ HEREDOC;
     /**
      * @throws ConformanceException
      */
-    public function setTemplateId(string $templateId): NucleiEnv
+    public function setTemplateId(string $templateId): Env
     {
         if (in_array($templateId, self::NUCLEI_TEMPLATES)) {
             $this->templateId = $templateId;

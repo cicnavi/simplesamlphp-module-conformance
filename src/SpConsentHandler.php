@@ -12,6 +12,7 @@ use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRequestReposito
 use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRepository;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Errors\SpConsentException;
+use SimpleSAML\Module\conformance\Errors\Tests\ConsentException;
 use SimpleSAML\Module\conformance\Factories\EmailFactory;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use Throwable;
@@ -65,7 +66,7 @@ class SpConsentHandler
         $contactEmails = $this->resolveProviderContactEmails($spMetadata);
 
         if (empty($contactEmails)) {
-            throw new SpConsentException('No contact emails available for SP ' . $spEntityId);
+            throw new ConsentException('No contact emails available for SP ' . $spEntityId);
         }
 
         $failedEmails = [];
@@ -114,7 +115,7 @@ class SpConsentHandler
         // If all emails have failed
         if (empty(array_diff($contactEmails, $failedEmails))) {
             $this->spConsentRequestsRepository->delete($spEntityId);
-            throw new SpConsentException(
+            throw new ConsentException(
                 'Could not send email to any contact for SP ' . $spEntityId .
                 " Errors were: " . implode('; ', $errors)
             );

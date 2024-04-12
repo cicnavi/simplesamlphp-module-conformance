@@ -66,7 +66,7 @@ class SpConsentRequestRepository extends AbstractDbEntity
 
     public function generate(string $spEntityId, string $contactEmail): string
     {
-        $challenge = $this->helpers->str()->random();
+        $challenge = $this->helpers->random()->string();
 
         $this->database->write(
             <<<EOT
