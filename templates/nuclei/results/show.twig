@@ -1,0 +1,51 @@
+{% set subPageTitle = 'Result Details'|trans %}
+
+{% extends "@conformance/base.twig" %}
+
+{% block conformanceContent %}
+
+  <div>
+    <table class="table pure-table pure-table-bordered">
+      <tbody>
+        <tr>
+          <td>{{ 'SP Entity ID'|trans }}</td>
+          <td>{{ result.spEntityId }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Happened at'|trans }}</td>
+          <td>{{ result.happenedAt|date }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Status'|trans }}</td>
+          <td>{{ result.isOk ? 'OK' : 'FAILING' }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Description'|trans }}</td>
+          <td>{{ result.description }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Nuclei Findings'|trans }}</td>
+          <td class="breakable"><pre>{{ result.findings|default('N/A') }}</pre> </td>
+        </tr>
+        <tr>
+          <td>{{ 'Nuclei JSON Result'|trans }}</td>
+          <td class="breakable">
+            {%- if result.parsedJsonResult is not null -%}
+              <pre>{{
+                result.parsedJsonResult|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_HEX_QUOT'))
+                }}</pre>
+            {% else -%}
+              N/A
+            {% endif %}
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}
+
+{% block postload %}
+  {{ parent() }}
+{% endblock %}

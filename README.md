@@ -227,6 +227,8 @@ Parameters:
   - valid values: any trusted SP Entity ID
   - example: `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
 - latestOnly (optional): can be used to only fetch latest result per SP
+  - valid values: `1` (true), `0` (false, default)
+  - example: `1`
   
 For example, to fetch all available results, make an HTTP GET request to:
 

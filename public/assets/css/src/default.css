@@ -215,3 +215,9 @@ div:hover > .showable { display: none; }
 table.table td {
     min-width: 10em;
 }
+
+table.table td.breakable pre {
+    white-space: break-spaces;
+    word-wrap: anywhere;
+    overflow-wrap: anywhere; /* For wider browser support */
+}

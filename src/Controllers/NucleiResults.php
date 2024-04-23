@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\conformance\Controllers;
 
+use JsonException;
 use Psr\Log\LoggerInterface;
 use SimpleSAML\Configuration;
 use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
+use SimpleSAML\Error\NotFound;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Authorization;
 use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
-use SimpleSAML\Module\conformance\Entities\Nuclei\TestResultStatus;
+use SimpleSAML\Module\conformance\Entities\Nuclei\TestResult;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
+use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Factories\TemplateFactory;
+use SimpleSAML\Module\conformance\Factories\TestResultFactory;
 use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
@@ -39,6 +43,7 @@ class NucleiResults
         protected Helpers $helpers,
         protected LoggerInterface $logger,
         protected TestResultRepository $testResultRepository,
+        protected TestResultFactory $testResultFactory,
     ) {
     }
 
@@ -64,7 +69,7 @@ class NucleiResults
         $this->getNormalizedResults(null, true);
 
         $template = $this->templateFactory->build(
-            ModuleConfiguration::MODULE_NAME . ':nuclei/results.twig',
+            ModuleConfiguration::MODULE_NAME . ':nuclei/results/index.twig',
             Routes::PATH_TEST_RESULTS,
         );
         $template->data['serviceProviders'] = $serviceProviders;
@@ -75,8 +80,35 @@ class NucleiResults
     }
 
     /**
+     * @throws ConfigurationError
+     * @throws ConformanceException
+     * @throws Exception
      * @throws AuthorizationException
-     * @throws \JsonException
+     * @throws JsonException
+     */
+    public function show(int $id, Request $request): Response
+    {
+        $this->authorization->requireAdministrativeToken($request);
+
+        $row = $this->testResultRepository->getSpecific($id);
+        $result = is_array($row) ? $this->testResultFactory->fromRow($row) : null;
+
+        if (is_null($result)) {
+            throw new NotFound('Test result not found');
+        }
+
+        $template = $this->templateFactory->build(
+            ModuleConfiguration::MODULE_NAME . ':nuclei/results/show.twig',
+            Routes::PATH_TEST_RESULTS,
+        );
+
+        $template->data['result'] = $result;
+
+        return $template;
+    }
+
+    /**
+     * @throws AuthorizationException
      */
     public function get(Request $request): Response
     {
@@ -96,6 +128,10 @@ class NucleiResults
         return new JsonResponse($this->getNormalizedResults($spEntityId, $latestOnly));
     }
 
+    /**
+     * @throws ConformanceException
+     * @throws JsonException
+     */
     protected function getNormalizedResults(?string $spEntityId = null, bool $latestOnly = false): array
     {
         $results = [];
@@ -104,15 +140,7 @@ class NucleiResults
             $this->testResultRepository->get($spEntityId);
 
         foreach ($rows as $row) {
-            $results[] = (new TestResultStatus(
-                (int)$row[TestResultRepository::COLUMN_ID],
-                (string)$row[TestResultRepository::COLUMN_ENTITY_ID],
-                (int)$row[TestResultRepository::COLUMN_HAPPENED_AT],
-                $row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT] ?
-                    (string)$row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT] : null,
-                $row[TestResultRepository::COLUMN_NUCLEI_FINDINGS] ?
-                    (string)$row[TestResultRepository::COLUMN_NUCLEI_FINDINGS] : null,
-            ))->jsonSerialize();
+            $results[] = ($this->testResultFactory->fromRow($row))->jsonSerialize();
         }
 
         return $results;

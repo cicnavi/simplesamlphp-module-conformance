@@ -113,6 +113,22 @@ class TestResultRepository extends AbstractDbEntity
         return $rows ?: [];
     }
 
+    public function getSpecific(int $id): ?array
+    {
+        $sql = "SELECT * FROM {$this->getPrefixedTableName()} " .
+            "WHERE {$this->noop(self::COLUMN_ID)} = :{$this->noop(self::COLUMN_ID)} ";
+
+        $params = [
+            self::COLUMN_ID => $id,
+        ];
+
+        $stmt = $this->database->read($sql, $params);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function deleteObsolete(string $spEntityId, int $recordsToKeep = 10): void
     {
         $recordsToKeep = max(1, $recordsToKeep);

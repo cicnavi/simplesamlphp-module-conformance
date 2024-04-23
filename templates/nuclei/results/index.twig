@@ -39,6 +39,10 @@
           <span>
               {{ result.sp_entity_id }} / {{ result.happened_at|date }}
           </span>
+
+          <span class="">
+              <a class="pure-button top-right-corner" href="results/show/{{ result.id }}">{{ 'Details'|trans }}</a>
+          </span>
           <hr>
             <ul>
                 <li><strong>Status:</strong> {{ result.is_ok ? 'OK' : 'FAILING' }}</li>

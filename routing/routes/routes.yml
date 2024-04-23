@@ -51,6 +51,14 @@ conformance-nuclei-results-index:
   methods:
     - GET
 
+conformance-nuclei-results-show:
+  path: /nuclei/results/show/{id}
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::show
+  methods:
+    - GET
+  requirements:
+    id: '\d+'
+
 conformance-nuclei-results-get:
   path: /nuclei/results/get
   controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::get
