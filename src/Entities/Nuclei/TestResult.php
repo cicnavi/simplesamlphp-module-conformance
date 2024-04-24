@@ -96,6 +96,17 @@ class TestResult implements JsonSerializable
         ];
     }
 
+    public function toDetailedArray(): array
+    {
+        return array_merge(
+            $this->jsonSerialize(),
+            [
+                'nuclei_findings' => $this->findings,
+                'nuclei_json_result' => $this->parsedJsonResult,
+            ]
+        );
+    }
+
     /**
      * @throws ConformanceException
      * @throws JsonException

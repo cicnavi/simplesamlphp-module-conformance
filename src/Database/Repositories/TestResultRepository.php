@@ -113,13 +113,31 @@ class TestResultRepository extends AbstractDbEntity
         return $rows ?: [];
     }
 
-    public function getSpecific(int $id): ?array
+    public function getSpecificById(int $id): ?array
     {
         $sql = "SELECT * FROM {$this->getPrefixedTableName()} " .
             "WHERE {$this->noop(self::COLUMN_ID)} = :{$this->noop(self::COLUMN_ID)} ";
 
         $params = [
             self::COLUMN_ID => $id,
+        ];
+
+        $stmt = $this->database->read($sql, $params);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function getSpecificByHappenedAt(string $spEntityId, int $happenedAt): ?array
+    {
+        $sql = "SELECT * FROM {$this->getPrefixedTableName()} " .
+            "WHERE {$this->noop(self::COLUMN_ENTITY_ID)} = :{$this->noop(self::COLUMN_ENTITY_ID)} AND " .
+            "{$this->noop(self::COLUMN_HAPPENED_AT)} = :{$this->noop(self::COLUMN_HAPPENED_AT)}";
+
+        $params = [
+            self::COLUMN_ENTITY_ID => $spEntityId,
+            self::COLUMN_HAPPENED_AT => $happenedAt,
         ];
 
         $stmt = $this->database->read($sql, $params);

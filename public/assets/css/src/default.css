@@ -221,3 +221,13 @@ table.table td.breakable pre {
     word-wrap: anywhere;
     overflow-wrap: anywhere; /* For wider browser support */
 }
+
+.pure-button {
+    margin-left: 0;
+}
+
+.test-result-image {
+    display: inline-block;
+    max-width: 30%;
+    margin: 5px;
+}

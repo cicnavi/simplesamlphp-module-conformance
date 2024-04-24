@@ -11,7 +11,9 @@ use SimpleSAML\Error\ConfigurationError;
 use SimpleSAML\Error\Exception;
 use SimpleSAML\Error\NotFound;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
+use SimpleSAML\Module\conformance\Auth\Process\Conformance;
 use SimpleSAML\Module\conformance\Authorization;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultImageRepository;
 use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 use SimpleSAML\Module\conformance\Entities\Nuclei\TestResult;
 use SimpleSAML\Module\conformance\Errors\AuthorizationException;
@@ -44,6 +46,7 @@ class NucleiResults
         protected LoggerInterface $logger,
         protected TestResultRepository $testResultRepository,
         protected TestResultFactory $testResultFactory,
+        protected TestResultImageRepository $testResultImageRepository,
     ) {
     }
 
@@ -86,28 +89,82 @@ class NucleiResults
      * @throws AuthorizationException
      * @throws JsonException
      */
-    public function show(int $id, Request $request): Response
+    public function show(int $testResultId, Request $request): Response
     {
-        $this->authorization->requireAdministrativeToken($request);
-
-        $row = $this->testResultRepository->getSpecific($id);
+        $row = $this->testResultRepository->getSpecificById($testResultId);
         $result = is_array($row) ? $this->testResultFactory->fromRow($row) : null;
-
-        if (is_null($result)) {
-            throw new NotFound('Test result not found');
-        }
 
         $template = $this->templateFactory->build(
             ModuleConfiguration::MODULE_NAME . ':nuclei/results/show.twig',
             Routes::PATH_TEST_RESULTS,
         );
 
+        if (is_null($result)) {
+            $template->setStatusCode(404);
+            return $template;
+        }
+
+        $this->authorization->requireServiceProviderToken($request, $result->spEntityId);
+
+        /** @psalm-suppress InternalMethod, MixedAssignment */
+        $spEntityId = $request->get(Conformance::KEY_SP_ENTITY_ID);
+        $spEntityId = $spEntityId ? (string)$spEntityId : null;
+        $backUrlParams = [];
+        if ($spEntityId) {
+            $backUrlParams[Conformance::KEY_SP_ENTITY_ID] = $spEntityId;
+        }
+        $backUrl = $this->helpers->routes()->getUrl(
+            Routes::PATH_TEST_RESULTS,
+            ModuleConfiguration::MODULE_NAME,
+            $backUrlParams,
+        );
+
+        $images = $this->testResultImageRepository->getForTestResult(
+            $result->id,
+            [TestResultImageRepository::COLUMN_ID, TestResultImageRepository::COLUMN_NAME]
+        );
+
         $template->data['result'] = $result;
+        $template->data['backUrl'] = $backUrl;
+        $template->data['images'] = $images;
 
         return $template;
     }
 
+    public function image(int $testResultId, int $imageId, Request $request): Response
+    {
+        $testResultRow = $this->testResultRepository->getSpecificById($testResultId);
+        $testResult = is_array($testResultRow) ? $this->testResultFactory->fromRow($testResultRow) : null;
+
+        if (!$testResult) {
+            return new Response(null, 404);
+        }
+
+        $this->authorization->requireServiceProviderToken($request, $testResult->spEntityId);
+
+        $imageRow = $this->testResultImageRepository->getSpecificForTestResult($testResultId, $imageId);
+
+        if (!$imageRow) {
+            return new Response(null, 404);
+        }
+
+        $imageName = isset($imageRow[TestResultImageRepository::COLUMN_NAME]) ?
+            (string)$imageRow[TestResultImageRepository::COLUMN_NAME] :
+            $imageId . 'png';
+
+        return new Response(
+            (string)$imageRow[TestResultImageRepository::COLUMN_DATA],
+            200,
+            [
+                'Content-Type' => 'image/png',
+                'Content-Disposition' => 'filename="' . $imageName . '"',
+            ]
+        );
+    }
+
     /**
+     * List result statuses in JSON format.
+     *
      * @throws AuthorizationException
      */
     public function get(Request $request): Response
@@ -126,6 +183,45 @@ class NucleiResults
         }
 
         return new JsonResponse($this->getNormalizedResults($spEntityId, $latestOnly));
+    }
+
+    public function getDetails(int $testResultId, Request $request): Response
+    {
+        $row = $this->testResultRepository->getSpecificById($testResultId);
+        $result = is_array($row) ? $this->testResultFactory->fromRow($row) : null;
+
+        if (!$result) {
+            return new JsonResponse(null, 404);
+        }
+
+        $this->authorization->requireServiceProviderToken($request, $result->spEntityId);
+
+        return new JsonResponse($result->toDetailedArray());
+    }
+
+    public function getImages(int $testResultId, Request $request): Response
+    {
+        $row = $this->testResultRepository->getSpecificById($testResultId);
+        $result = is_array($row) ? $this->testResultFactory->fromRow($row) : null;
+
+        if (!$result) {
+            return new JsonResponse(null, 404);
+        }
+
+        $this->authorization->requireServiceProviderToken($request, $result->spEntityId);
+
+        $imageRows = $this->testResultImageRepository->getForTestResult(
+            $result->id,
+            [TestResultImageRepository::COLUMN_ID, TestResultImageRepository::COLUMN_NAME]
+        );
+
+        // Add URL for each image.
+        array_walk($imageRows, function (array &$imageRow) use ($testResultId) {
+            $imageRow['url'] = $this->helpers->routes()->getUrl(Routes::PATH_TEST_RESULTS) .
+                "/show/$testResultId/image/{$imageRow[TestResultImageRepository::COLUMN_ID]}";
+        });
+
+        return new JsonResponse($imageRows);
     }
 
     /**

@@ -37,17 +37,16 @@
     {% if results %}
         {% for result in results %}
           <span>
-              {{ result.sp_entity_id }} / {{ result.happened_at|date }}
-          </span>
-
-          <span class="">
-              <a class="pure-button top-right-corner" href="results/show/{{ result.id }}">{{ 'Details'|trans }}</a>
+              <a class="pure-button "
+                 href="results/show/{{ result.id }}{{ spEntityId ? '?spEntityId=' ~ spEntityId : '' }}">
+                  {{ result.sp_entity_id }} / {{ result.happened_at|date }}
+              </a>
           </span>
           <hr>
-            <ul>
-                <li><strong>Status:</strong> {{ result.is_ok ? 'OK' : 'FAILING' }}</li>
-                <li><strong>Description:</strong> {{ result.description }}</li>
-            </ul>
+          <ul>
+            <li><strong>Status:</strong> {{ result.is_ok ? 'OK' : 'FAILING' }}</li>
+            <li><strong>Description:</strong> {{ result.description }}</li>
+          </ul>
             <br>
         {% endfor %}
       <br>

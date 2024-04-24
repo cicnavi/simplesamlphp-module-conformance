@@ -20,12 +20,12 @@ class TestResultFactory
 
         return new TestResult(
             (int)$row[TestResultRepository::COLUMN_ID],
-                (string)$row[TestResultRepository::COLUMN_ENTITY_ID],
-                (int)$row[TestResultRepository::COLUMN_HAPPENED_AT],
-                isset($row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT]) &&
+            (string)$row[TestResultRepository::COLUMN_ENTITY_ID],
+            (int)$row[TestResultRepository::COLUMN_HAPPENED_AT],
+            isset($row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT]) &&
                 (!empty($row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT])) ?
                     (string)$row[TestResultRepository::COLUMN_NUCLEI_JSON_RESULT] : null,
-                isset($row[TestResultRepository::COLUMN_NUCLEI_FINDINGS]) &&
+            isset($row[TestResultRepository::COLUMN_NUCLEI_FINDINGS]) &&
                 (!empty($row[TestResultRepository::COLUMN_NUCLEI_FINDINGS])) ?
                     (string)$row[TestResultRepository::COLUMN_NUCLEI_FINDINGS] : null,
         );

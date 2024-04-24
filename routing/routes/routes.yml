@@ -52,18 +52,43 @@ conformance-nuclei-results-index:
     - GET
 
 conformance-nuclei-results-show:
-  path: /nuclei/results/show/{id}
+  path: /nuclei/results/show/{testResultId}
   controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::show
   methods:
     - GET
   requirements:
-    id: '\d+'
+    testResultId: '\d+'
+
+conformance-nuclei-results-show-image:
+  path: /nuclei/results/show/{testResultId}/image/{imageId}
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::image
+  methods:
+    - GET
+  requirements:
+    testResultId: '\d+'
+    imageId: '\d+'
 
 conformance-nuclei-results-get:
   path: /nuclei/results/get
   controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::get
   methods:
     - GET
+
+conformance-nuclei-results-get-details:
+  path: /nuclei/results/get/{testResultId}
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::getDetails
+  methods:
+    - GET
+  requirements:
+    testResultId: '\d+'
+
+conformance-nuclei-results-get-images:
+  path: /nuclei/results/get/{testResultId}/images
+  controller: SimpleSAML\Module\conformance\Controllers\NucleiResults::getImages
+  methods:
+    - GET
+  requirements:
+    testResultId: '\d+'
 
 conformance-nuclei-results-download:
   path: /nuclei/results/download
