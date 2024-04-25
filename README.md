@@ -50,15 +50,20 @@ however, the description of the overall concept follows.
 
 This module needs a database connection to be set in config/config.php. Once the connection is set, navigate to
 SimpleSAMLphp administration area > Configuration > Conformance (Details area) > Module Overview, and run the
-available migrations.
+available migrations. 
 
-### PDO Metadata Storage Handler
+Related to DB config, note that this module relies on PDO as being set as one of the types of metadata storage handlers
+in SimpleSAMLphp. You can go through the following documentation to set it up:
+<https://simplesamlphp.org/docs/stable/simplesamlphp-metadata-pdostoragehandler>.
+You don't have to import existing flatfile metadata files if you don't want to. You are free to use any other metadata
+source supported by SimpleSAMLphp.
 
-This module relies on PDO as being set as a metadata storage handler in SimpleSAMLphp. Please go through the following
-documentation to set it up: <https://simplesamlphp.org/docs/stable/simplesamlphp-metadata-pdostoragehandler>
+Alternatively or in case of automatic / scripted deployments, you can run the 'bin/install.php' script from the
+command line:
 
-Note that in addition to PDO metadata storage handler, you are free to use any other metadata source supported
-by SimpleSAMLphp.
+    php modules/oidc/bin/install.php
+
+This script will run all Conformance module migrations as well as migrations for the PDO metadata storage handler. 
 
 ### Nuclei installation
 
