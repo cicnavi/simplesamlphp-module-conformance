@@ -21,7 +21,11 @@
         </tr>
         <tr>
           <td>{{ 'Status'|trans }}</td>
-          <td>{{ result.isOk ? 'OK' : 'FAILING' }}</td>
+          <td>
+            <span class="test-result-status {{ result.isOk ? 'status-ok' : 'status-failing' }}">
+            {{ result.isOk ? 'OK' : 'FAILING' }}
+            </span>
+          </td>
         </tr>
         <tr>
           <td>{{ 'Description'|trans }}</td>

@@ -44,7 +44,12 @@
           </span>
           <hr>
           <ul>
-            <li><strong>Status:</strong> {{ result.is_ok ? 'OK' : 'FAILING' }}</li>
+            <li>
+                <strong>Status:</strong>
+                <span class="test-result-status {{ result.is_ok ? 'status-ok' : 'status-failing' }}">
+                    {{ result.is_ok ? 'OK' : 'FAILING' }}
+                </span>
+            </li>
             <li><strong>Description:</strong> {{ result.description }}</li>
           </ul>
             <br>
