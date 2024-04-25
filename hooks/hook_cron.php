@@ -8,6 +8,7 @@ use SimpleSAML\Database;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
 use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRepository;
 use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRequestRepository;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultImageRepository;
 use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 use SimpleSAML\Module\conformance\Factories\BulkTestStateFactory;
 use SimpleSAML\Module\conformance\Factories\EmailFactory;
@@ -55,7 +56,13 @@ function conformance_hook_cron(array &$cronInfo): void
         $helpers,
         $sspBridge,
     );
-    $testResultsRepository = new TestResultRepository(
+    $testResultRepository = new TestResultRepository(
+        $sspConfiguration,
+        $moduleConfiguration,
+        $database,
+        $helpers,
+    );
+    $testResultImageRepository = new TestResultImageRepository(
         $sspConfiguration,
         $moduleConfiguration,
         $database,
@@ -67,7 +74,8 @@ function conformance_hook_cron(array &$cronInfo): void
         $metaDataStorageHandler,
         $nucleiEnv,
         $helpers,
-        $testResultsRepository,
+        $testResultRepository,
+        $testResultImageRepository,
     );
     $logger = new Logger();
 
