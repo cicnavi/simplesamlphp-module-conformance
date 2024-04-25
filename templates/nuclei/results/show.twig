@@ -1,0 +1,86 @@
+{% set subPageTitle = 'Result Details'|trans %}
+
+{% extends "@conformance/base.twig" %}
+
+{% block conformanceContent %}
+
+  <div>
+    <a class="pure-button" href="{{ backUrl }}">{{ 'Back to result list' }}</a>
+    <br><br>
+
+    {% if result %}
+    <table class="table pure-table pure-table-bordered">
+      <tbody>
+        <tr>
+          <td>{{ 'SP Entity ID'|trans }}</td>
+          <td>{{ result.spEntityId }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Happened at'|trans }}</td>
+          <td>{{ result.happenedAt|date }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Status'|trans }}</td>
+          <td>{{ result.isOk ? 'OK' : 'FAILING' }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Description'|trans }}</td>
+          <td>{{ result.description }}</td>
+        </tr>
+        <tr>
+          <td>{{ 'Images'|trans }}</td>
+          <td>
+            {% if images %}
+              {% for image in images %}
+                <div class="test-result-image">
+                  <a href="{{ result.id }}/image/{{ image.id }}"
+                     target="_blank"
+                  >
+                    <img class="pure-img"
+                         src="{{ result.id }}/image/{{ image.id }}"
+                         alt="{{ image.name }}" title="{{ image.name }}">
+                  </a>
+                </div>
+            {% endfor %}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>{{ 'Nuclei Findings'|trans }}</td>
+          <td class="breakable">
+            {%- if result.findings is not null -%}
+              <pre>{{ result.findings }}</pre>
+            {% else -%}
+              N/A
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>{{ 'Nuclei JSON Result'|trans }}</td>
+          <td class="breakable">
+            {%- if result.parsedJsonResult is not null -%}
+              <pre>{{
+                result.parsedJsonResult|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_HEX_QUOT'))
+                }}</pre>
+            {% else -%}
+              N/A
+            {% endif %}
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {% else %}
+      <p>
+        {{ 'Test result not found.'|trans }}
+      </p>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block postload %}
+  {{ parent() }}
+{% endblock %}

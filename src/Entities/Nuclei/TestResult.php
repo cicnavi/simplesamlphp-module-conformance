@@ -11,7 +11,7 @@ use SimpleSAML\Module\conformance\Errors\ConformanceException;
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
-class TestResultStatus implements JsonSerializable
+class TestResult implements JsonSerializable
 {
     final public const COLUMN_ID = 'id';
     final public const COLUMN_SP_ENTITY_ID = 'sp_entity_id';
@@ -22,7 +22,7 @@ class TestResultStatus implements JsonSerializable
     public readonly ?array $parsedJsonResult;
 
     /**
-     * @throws JsonException
+     * @throws ConformanceException|JsonException
      */
     public function __construct(
         public readonly int $id,
@@ -31,7 +31,6 @@ class TestResultStatus implements JsonSerializable
         ?string $jsonResult = null,
         public readonly ?string $findings = null,
     ) {
-
         $this->parsedJsonResult = $this->resolveJsonResult($jsonResult);
     }
 
@@ -95,6 +94,17 @@ class TestResultStatus implements JsonSerializable
             self::COLUMN_IS_OK => $this->isOk(),
             self::DESCRIPTION => $this->getDescription(),
         ];
+    }
+
+    public function toDetailedArray(): array
+    {
+        return array_merge(
+            $this->jsonSerialize(),
+            [
+                'nuclei_findings' => $this->findings,
+                'nuclei_json_result' => $this->parsedJsonResult,
+            ]
+        );
     }
 
     /**

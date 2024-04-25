@@ -7,6 +7,7 @@ namespace SimpleSAML\Module\conformance\Nuclei;
 use Exception;
 use SimpleSAML\Configuration;
 use SimpleSAML\Metadata\MetaDataStorageHandler;
+use SimpleSAML\Module\conformance\Database\Repositories\TestResultImageRepository;
 use SimpleSAML\Module\conformance\Database\Repositories\TestResultRepository;
 use SimpleSAML\Module\conformance\Errors\ConformanceException;
 use SimpleSAML\Module\conformance\Errors\SpMetadataException;
@@ -30,6 +31,7 @@ class TestRunner
         public readonly Env $env,
         protected Helpers $helpers,
         protected TestResultRepository $testResultRepository,
+        protected TestResultImageRepository $testResultImageRepository,
     ) {
     }
 
@@ -142,6 +144,9 @@ class TestRunner
         return shell_exec($command);
     }
 
+    /**
+     * @throws ConformanceException
+     */
     public function persistLatestResults(string $spEntityId): void
     {
         // Find all artifacts that Nuclei produced, parse them and store results in DB.
@@ -214,6 +219,47 @@ class TestRunner
                 $jsonResult,
                 $findings,
             );
+
+            // Let's persist images if available.
+            $images = array_filter($latestArtifacts, fn ($item): bool => str_ends_with($item, '.png'));
+            if (!empty($images)) {
+                // Get ID of the test result row, so we can use it as foreign key.
+                $testResultRow = $this->testResultRepository->getSpecificByHappenedAt(
+                    $spEntityId,
+                    intval($latestTimestamp)
+                );
+                $testResultId = isset($testResultRow[TestResultRepository::COLUMN_ID]) ?
+                    (int)$testResultRow[TestResultRepository::COLUMN_ID]
+                    : null;
+                if (!$testResultId) {
+                    $message = sprintf(
+                        'Could not find test result ID for %s happened at %s',
+                        $spEntityId,
+                        $latestTimestamp
+                    );
+                    throw new ConformanceException($message);
+                }
+
+                foreach ($images as $image) {
+                    if (
+                        file_exists(
+                            $imagePath = $this->helpers->filesystem()->getPathFromElements(
+                                $this->env->getSpResultsDir($spEntityId),
+                                strval($latestTimestamp),
+                                $image
+                            )
+                        ) &&
+                        $imageContent = file_get_contents($imagePath)
+                    ) {
+                        $this->testResultImageRepository->add(
+                            intval($testResultId),
+                            $imageContent,
+                            $image,
+                        );
+                    }
+                }
+            }
+
             $this->testResultRepository->deleteObsolete(
                 $spEntityId,
                 $this->moduleConfiguration->getNumberOfResultsToKeepPerSp()

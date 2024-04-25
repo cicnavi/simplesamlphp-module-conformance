@@ -25,11 +25,11 @@ abstract class AbstractDbEntity
 
     abstract public static function getTableName(): string;
 
-    public function getPrefixedTableName(): string
+    public function getPrefixedTableName(?string $forTable = null): string
     {
         return $this->helpers->database()->getTableName(
             $this->moduleConfiguration->getDatabaseTableNamesPrefix(),
-            $this->getTableName(),
+            $forTable ?? $this->getTableName(),
         );
     }
 

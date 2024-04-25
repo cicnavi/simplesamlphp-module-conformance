@@ -213,10 +213,10 @@ HTTP GET request to:
 
 `https://conformance-idp.example.com/module.php/conformance/nuclei/test/run?spEntityId=urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
 
-### Test results
+### Test results list
 
-Endpoint to fetch test results in JSON format. By default, all results from all SPs will be returned. This can be 
-filter out using parameters below.
+Endpoint to fetch short test results in JSON format. By default, all results from all SPs will be returned. This can be 
+filtered out using parameters below.
 
 URI: `https://conformance-idp.example.com/module.php/conformance/nuclei/results/get`
 
@@ -227,6 +227,8 @@ Parameters:
   - valid values: any trusted SP Entity ID
   - example: `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`
 - latestOnly (optional): can be used to only fetch latest result per SP
+  - valid values: `1` (true), `0` (false, default)
+  - example: `1`
   
 For example, to fetch all available results, make an HTTP GET request to:
 
@@ -243,6 +245,42 @@ To fetch all results for the SP `urn:x-simplesamlphp:geant:incubator:simplesamlp
 To fetch only the latest result for the SP `urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp`:
 
 `https://conformance-idp.example.com/module.php/conformance/nuclei/results/get?spEntityId=urn:x-simplesamlphp:geant:incubator:simplesamlphp-sp:good-sp&latestOnly=1`
+
+### Test result details
+
+Endpoint to fetch particular test result details. This will also return data like full Nuclei findings and Nuclei JSON
+report.
+
+URI: `https://conformance-idp.example.com/module.php/conformance/nuclei/results/get/{testResultId}`
+
+HTTP method: GET
+
+Parameters:
+  - testResultId (route parameter): ID of the specific test result. It can be found in the test results list.
+    - valid values: any test result ID from the test results list
+    - example: `74`
+
+For example, to fetch the details of test result with an ID of 74, make an HTTP GET request to:
+
+`https://conformance-idp.example.com/module.php/conformance/nuclei/results/get/74`
+
+### Test result images list
+
+Endpoint to list particular test result images. This will return a list of images with their id, name and URI where
+they can be fetched from.
+
+URI: `https://conformance-idp.example.com/module.php/conformance/nuclei/results/get/{testResultId}/images`
+
+HTTP method: GET
+
+Parameters:
+- testResultId (route parameter): ID of the specific test result. It can be found in the test results list.
+  - valid values: any test result ID from the test results list
+  - example: `74`
+
+For example, to fetch images list of test result with an ID of 74, make an HTTP GET request to:
+
+`https://conformance-idp.example.com/module.php/conformance/nuclei/results/get/74/images`
 
 ### SP metadata provisioning
 
