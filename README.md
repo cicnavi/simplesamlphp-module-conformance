@@ -61,7 +61,7 @@ source supported by SimpleSAMLphp.
 Alternatively or in case of automatic / scripted deployments, you can run the 'bin/install.php' script from the
 command line:
 
-    php modules/oidc/bin/install.php
+    php modules/conformance/bin/install.php
 
 This script will run all Conformance module migrations as well as migrations for the PDO metadata storage handler. 
 
