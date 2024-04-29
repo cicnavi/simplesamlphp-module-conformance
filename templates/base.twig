@@ -37,13 +37,6 @@
 
 {% endblock content -%}
 
-{% block postload %}
-    <script>
-        (function() {
-            window.conformance = {};
-            window.conformance.nuclei = {};
-        })();
-    </script>
-{% endblock postload %}
+{% block postload %}{% endblock postload %}
 
 {% block conformancePostload %}{% endblock %}
