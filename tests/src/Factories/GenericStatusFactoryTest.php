@@ -1,19 +1,22 @@
 <?php
 
-namespace SimpleSAML\Test\Module\conformance;
+declare(strict_types=1);
 
+namespace SimpleSAML\Test\Module\conformance\Factories;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use SimpleSAML\Module\conformance\Factories\GenericStatusFactory;
 use SimpleSAML\Module\conformance\GenericStatus;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ServerBag;
 
-/**
- * @covers \SimpleSAML\Module\conformance\Factories\GenericStatusFactory
- * @uses \SimpleSAML\Module\conformance\GenericStatus
- */
+#[CoversClass(GenericStatusFactory::class)]
+#[UsesClass(GenericStatus::class)]
 class GenericStatusFactoryTest extends TestCase
 {
     protected MockObject $requestMock;

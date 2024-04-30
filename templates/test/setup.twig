@@ -14,7 +14,7 @@
       Create a SAML response with a valid IdP signature. The certificate in IdP metadata corresponds to the private
       key used to create the signature, so it can be validated. SP should accept this SAML response without errors
       (or at least without SAML signature related errors).
-      {% trans %}
+      {% endtrans %}
     </p>
     <a href="{{ moduleURL('conformance/test/setup?testId=standardResponse&StateId=' ~ StateId) }}"
        class="card-link"
