@@ -6,19 +6,19 @@
 
     <p>
     {% if isConsentRequired %}
-        SP consent requirement has been enabled in module configuration.
-        Below you can find a list of SPs and their consent status.
+        {% trans %}SP consent requirement has been enabled in module configuration.
+        Below you can find a list of SPs and their consent status.{% endtrans %}
     {% else %}
-       SP consent requirement has been disabled in module configuration.
+       {% trans %}SP consent requirement has been disabled in module configuration.{% endtrans %}
     {% endif %}
     </p>
 
     {% if isConsentRequired %}
         {% if overridden %}
-            <h4>SPs for which the consent requirement has been overridden in module configuration.</h4>
+            <h4>{{ 'SPs for which the consent requirement has been overridden in module configuration.'|trans }}</h4>
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP Entity ID</th></tr>
+                <tr><th>{{ 'SP Entity ID'|trans }}</th></tr>
                 </thead>
                 <tbody>
                 {%- for spEntityID in overridden -%}
@@ -28,11 +28,15 @@
             </table>
         {% endif %}
 
-        <h4>SPs for which the consent has been acquired</h4>
+        <h4>{{ 'SPs for which the consent has been acquired'|trans }}</h4>
         {% if consented %}
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP Entity ID</th><th>From contact email</th><th>Date</th></tr>
+                <tr>
+                    <th>{{ 'SP Entity ID'|trans }}</th>
+                    <th>{{ 'From contact email'|trans }}</th>
+                    <th>{{ 'Date'|trans }}</th>
+                </tr>
                 </thead>
                 <tbody>
                 {%- for sp in consented -%}
@@ -48,11 +52,15 @@
             <p>No data.</p>
         {% endif %}
 
-        <h4>SPs for which the consent has been requested</h4>
+        <h4>{{ 'SPs for which the consent has been requested'|trans }}</h4>
         {% if requested %}
             <table class="table pure-table pure-table-bordered">
                 <thead>
-                <tr><th>SP Entity ID</th><th>Contact email</th><th>Date</th></tr>
+                <tr>
+                    <th>{{ 'SP Entity ID'|trans }}</th>
+                    <th>{{ 'Contact email'|trans }}</th>
+                    <th>{{ 'Date'|trans }}</th>
+                </tr>
                 </thead>
                 <tbody>
                 {%- for sp in requested -%}

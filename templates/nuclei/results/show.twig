@@ -5,7 +5,7 @@
 {% block conformanceContent %}
 
   <div>
-    <a class="pure-button" href="{{ backUrl }}">{{ 'Back to result list' }}</a>
+    <a class="pure-button" href="{{ backUrl }}">{{ 'Back to result list'|trans }}</a>
     <br><br>
 
     {% if result %}
@@ -69,7 +69,7 @@
                 result.parsedJsonResult|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_HEX_QUOT'))
                 }}</pre>
             {% else -%}
-              N/A
+              {{ 'N/A'|trans }}
             {% endif %}
 
           </td>

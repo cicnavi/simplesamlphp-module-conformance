@@ -23,6 +23,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
+use function noop;
+
 class Metadata
 {
     public function __construct(
@@ -70,21 +72,21 @@ class Metadata
         $requestStatus = $this->genericStatusFactory->fromRequest($request);
 
         if (empty($xmlData)) {
-            $requestStatus->setStatusError()->setMessage('No XML data provided.');
+            $requestStatus->setStatusError()->setMessage(noop('No XML data provided.'));
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             $this->sspBridge->utils()->xml()->checkSAMLMessage($xmlData, 'saml-meta');
         } catch (Exception $exception) {
-            $requestStatus->setStatusError()->setMessage('Invalid XML. ' . $exception->getMessage());
+            $requestStatus->setStatusError()->setMessage(noop('Invalid XML. ') . $exception->getMessage());
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             $entities = $this->sspBridge->metadata()->samlParser()->parseDescriptorsString($xmlData);
         } catch (Throwable $exception) {
-            $requestStatus->setStatusError()->setMessage('Error parsing XML. ' . $exception->getMessage());
+            $requestStatus->setStatusError()->setMessage(noop('Error parsing XML. ') . $exception->getMessage());
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
@@ -106,10 +108,10 @@ class Metadata
         }
 
         if (empty($spEntities)) {
-            $requestStatus->setStatusOk()->setMessage('XML parsed, but no SP metadata found.');
+            $requestStatus->setStatusOk()->setMessage(noop('XML parsed, but no SP metadata found.'));
         } else {
             $requestStatus->setStatusOk()->setMessage(
-                sprintf('Imported/Updated metadata for %s SPs.', count($spEntities))
+                sprintf(noop('Imported/Updated metadata for %s SPs.'), count($spEntities))
             );
         }
 

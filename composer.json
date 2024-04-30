@@ -48,6 +48,7 @@
     },
     "scripts": {
         "pre-commit": [
+            "vendor/bin/phpcbf",
             "vendor/bin/phpcs -p",
             "vendor/bin/psalm",
             "vendor/bin/phpunit"

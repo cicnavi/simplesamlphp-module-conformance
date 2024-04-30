@@ -1,11 +1,21 @@
 <?php
 
-use JetBrains\PhpStorm\NoReturn;
+declare(strict_types=1);
 
 if (!function_exists('dd')) {
-    #[NoReturn]
     function dd(mixed ...$values): void
     {
-        die(var_dump(...$values));
+        var_dump(...$values);
+        die();
+    }
+}
+
+if (!function_exists('noop')) {
+    /**
+     * Noop, marks the string for translation but returns it unchanged.
+     */
+    function noop(string $original): string
+    {
+        return $original;
     }
 }

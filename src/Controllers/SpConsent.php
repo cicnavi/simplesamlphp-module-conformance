@@ -17,6 +17,8 @@ use SimpleSAML\Module\conformance\SpConsentHandler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function noop;
+
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
@@ -79,15 +81,15 @@ class SpConsent
         $status = $this->genericStatusFactory->fromRequest($request);
 
         if (empty($spEntityId) || empty($challenge) || empty($contactEmail)) {
-            $status->setStatusError()->setMessage('Missing required parameters.');
+            $status->setStatusError()->setMessage(noop('Missing required parameters.'));
         } elseif (! $this->spConsentHandler->shouldValidateConsentForSp($spEntityId)) {
-            $status->setStatusError()->setMessage('SP consent not required.');
+            $status->setStatusError()->setMessage(noop('SP consent not required.'));
         } elseif ($this->spConsentHandler->isConsentedForSp($spEntityId)) {
-            $status->setStatusError()->setMessage('SP consent already acquired.');
+            $status->setStatusError()->setMessage(noop('SP consent already acquired.'));
         } else {
             $consentRequest = $this->spConsentHandler->getSpConsentRequest($spEntityId, $contactEmail);
             if (is_null($consentRequest)) {
-                $status->setStatusError()->setMessage('SP consent not requested.');
+                $status->setStatusError()->setMessage(noop('SP consent not requested.'));
             } elseif (
                 (isset($consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE]) &&
                     (string)$consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE] === $challenge) &&
@@ -95,9 +97,9 @@ class SpConsent
                     (string)$consentRequest[SpConsentRequestRepository::COLUMN_CONTACT_EMAIL] === $contactEmail)
             ) {
                 $this->spConsentHandler->addConsent($spEntityId, $contactEmail);
-                $status->setStatusOk()->setMessage('SP consent added.');
+                $status->setStatusOk()->setMessage(noop('SP consent added.'));
             } else {
-                $status->setStatusError()->setMessage('Could not verify challenge.');
+                $status->setStatusError()->setMessage(noop('Could not verify challenge.'));
             }
         }
 

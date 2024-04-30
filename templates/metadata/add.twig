@@ -5,8 +5,8 @@
 {% block conformanceContent %}
 
     <p>
-        Use the form below to add new / update existing Service Provider (SP) metadata. You can check for
-        available SP metadata in the standard administration area of SimpleSAMLphp.
+        {% trans %}Use the form below to add new / update existing Service Provider (SP) metadata. You can check for
+        available SP metadata in the standard administration area of SimpleSAMLphp.{% endtrans %}
     </p>
 
     <form method="post" class="pure-form" enctype="multipart/form-data" action="{{ moduleURL('conformance/metadata/persist') }}">

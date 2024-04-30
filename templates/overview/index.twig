@@ -4,12 +4,13 @@
 
 {% block conformanceContent %}
 
-    <p>Conformance module overview and setup.</p>
+    <p>{{ 'Conformance module overview and setup.'|trans }}</p>
 
     <h4>Nuclei</h4>
 
     <p>
-        Conformance module depends on Nuclei to run the SAML security related tests. Nuclei info is:
+        {% trans %}Conformance module depends on Nuclei to run the SAML security related tests.
+        Nuclei info is:{% endtrans %}
     </p>
 
     <pre>
@@ -22,13 +23,16 @@
 
     <br>
 
-    <h4>Migrations</h4>
+    <h4>{{ 'Migrations'|trans }}</h4>
 
     <p>
-        Conformance module uses a database to store different things related to test runs.
+        {% trans %}Conformance module uses a database to store different things related to test runs.{% endtrans %}
     </p>
     {%- if migrator.nonImplementedMigrations %}
-        <p>There are database migrations that have not been implemented. Use the button below to run them now.</p>
+        <p>
+            {% trans %}There are database migrations that have not been implemented.
+            Use the button below to run them now.{% endtrans %}
+        </p>
         <ul>
             {% for migration in migrator.nonImplementedMigrations %}
                 <li>* {{ migration }}</li>
@@ -45,14 +49,14 @@
     {% endif %}
 
     <br>
-    <h4>Administrative authorization tokens</h4>
+    <h4>{{ 'Administrative authorization tokens'|trans }}</h4>
 
-    <p>These tokens can be used for API actions on all SPs.</p>
+    <p>{{ 'These tokens can be used for API actions on all SPs.'|trans }}</p>
 
     {%- if moduleConfiguration.administrativeTokens -%}
         <table class="table pure-table pure-table-bordered">
             <thead>
-            <tr><th>Value</th><th>Description</th></tr>
+            <tr><th>{{ 'Value'|trans }}</th><th>{{ 'Description'|trans }}</th></tr>
             </thead>
             <tbody>
             {%- for token, description in moduleConfiguration.administrativeTokens -%}
@@ -68,18 +72,18 @@
             </tbody>
         </table>
     {% else %}
-        <p>No administrative tokens available.</p>
+        <p>{{ 'No administrative tokens available.'|trans }}</p>
     {% endif %}
 
     <br>
-    <h4>Service Provider authorization tokens</h4>
+    <h4>{{ 'Service Provider authorization tokens'|trans }}</h4>
 
-    <p>These tokens can be used for API actions on particular SPs.</p>
+    <p>{{ 'These tokens can be used for API actions on particular SPs.'|trans }}</p>
 
     {%- if moduleConfiguration.serviceProviderTokens -%}
         <table class="table pure-table pure-table-bordered">
             <thead>
-            <tr><th>Value</th><th>Service providers</th></tr>
+            <tr><th>{{ 'Value'|trans }}</th><th>{{ 'Service providers'|trans }}</th></tr>
             </thead>
             <tbody>
             {%- for token, serviceProviders in moduleConfiguration.serviceProviderTokens -%}
@@ -100,13 +104,8 @@
             </tbody>
         </table>
     {% else %}
-        <p>No administrative tokens available.</p>
+        <p>{{ 'No administrative tokens available.'|trans }}</p>
     {% endif %}
-
-
-
-
-
 {% endblock conformanceContent -%}
 
 {% block postload %}

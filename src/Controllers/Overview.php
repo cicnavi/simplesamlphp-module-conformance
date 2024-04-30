@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function noop;
+
 class Overview
 {
     public function __construct(
@@ -66,9 +68,9 @@ class Overview
 
         try {
             $this->migrator->runNonImplementedMigrations();
-            $status->setStatusOk()->setMessage('Migrations implemented.');
+            $status->setStatusOk()->setMessage(noop('Migrations implemented.'));
         } catch (\Throwable $exception) {
-            $status->setStatusError()->setMessage('Error while running migrations: ' . $exception->getMessage());
+            $status->setStatusError()->setMessage(noop('Error while running migrations: ') . $exception->getMessage());
         }
 
         return new RedirectResponse(

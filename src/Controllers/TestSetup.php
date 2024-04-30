@@ -75,7 +75,7 @@ class TestSetup
         $stateId = empty($stateId) ? null : (string)$stateId;
 
         if (is_null($stateId)) {
-            throw new Exception('Missing required StateId query parameter.');
+            throw new Exception(noop('Missing required StateId query parameter.'));
         }
 
         $state = $this->sspBridge->auth()->state()->loadState($stateId, Conformance::KEY_STATE_STAGE_ID_TEST_SETUP);

@@ -5,14 +5,14 @@
 {% block conformanceContent %}
 
   <p>
-      By default, here you can find latest results for all tested service providers.
-      Choose a specific service provider to list its results only.
+      {% trans %}By default, here you can find latest results for all tested service providers.
+      Choose a specific service provider to list its results only.{% endtrans %}
   </p>
 
   <div class="form-container">
     <form id="resultsForm" method="get" action="results">
       <div class="form-group">
-        <label for="spEntityId">Service Provider (SP)</label>
+        <label for="spEntityId">{{ 'Service Provider (SP)'|trans }}</label>
         <select id="spEntityId" name="spEntityId">
           <option value=""></option>
           {% for entityId, serviceProvider in serviceProviders %}
@@ -27,9 +27,9 @@
 
   <h4>
       {% if spEntityId %}
-          All results for {{ spEntityId }}
+          {{ 'All results for'|trans }} {{ spEntityId }}
       {% else %}
-          Latest results for all tested service providers
+          {{ 'Latest results for all tested service providers'|trans }}
       {% endif %}
   </h4>
   <br>
@@ -45,35 +45,19 @@
           <hr>
           <ul>
             <li>
-                <strong>Status:</strong>
+                <strong>{{ 'Status:'|trans }}</strong>
                 <span class="test-result-status {{ result.is_ok ? 'status-ok' : 'status-failing' }}">
                     {{ result.is_ok ? 'OK' : 'FAILING' }}
                 </span>
             </li>
-            <li><strong>Description:</strong> {{ result.description }}</li>
+            <li><strong>{{ 'Description:'|trans }}</strong> {{ result.description }}</li>
           </ul>
             <br>
         {% endfor %}
       <br>
-{#      <h4>Artifacts from all tests</h4>#}
-{#      {% for timestamp, entries in artifacts %}#}
-{#        <span>{{ timestamp|date }}</span>#}
-{#        <hr>#}
-{#        <ul>#}
-{#          {% for entry in entries %}#}
-{#          <li>#}
-{#            * <a href="results/download?spEntityId={{ selectedSpEntityId|url_encode }}&result={{ timestamp }}/{{ entry|url_encode }}">#}
-{#              {{ entry }}#}
-{#            </a>#}
-{#          </li>#}
-{#          {% endfor %}#}
-{#        </ul>#}
-
-{#        <br>#}
-{#      {% endfor %}#}
     {% elseif spEntityId %}
       <p>
-        No entries.
+        {{ 'No entries.'|trans }}
       </p>
     {% endif %}
   </div>
