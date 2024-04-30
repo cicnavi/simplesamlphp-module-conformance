@@ -21,8 +21,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-use function noop;
-
 /**
  * @psalm-suppress InternalMethod
  */
@@ -68,7 +66,7 @@ class NucleiTest
 
         if ($testId && !$this->responderResolver->fromTestId($testId)) {
             return new StreamedResponse(function () {
-                echo noop('Invalid test ID.');
+                echo $this->helpers->localization()->noop('Invalid test ID.');
             });
         }
 
@@ -78,7 +76,7 @@ class NucleiTest
 
         if (empty($spEntityId)) {
             return new StreamedResponse(function () {
-                echo noop('Invalid SP selected.');
+                echo $this->helpers->localization()->noop('Invalid SP selected.');
             });
         }
 
@@ -96,7 +94,8 @@ class NucleiTest
             $command = $this->nucleiTestRunner->prepareCommand($token, $spEntityId, $acsUrl, $testId);
         } catch (\Throwable $exception) {
             return new StreamedResponse(function () use ($exception) {
-                echo noop('Error while preparing command: ') . $exception->getMessage();
+                echo $this->helpers->localization()->noop('Error while preparing command: ') .
+                $exception->getMessage();
             });
         }
 
@@ -116,7 +115,7 @@ class NucleiTest
 
                 // Check if the process was successfully started
                 if (!is_resource($process)) {
-                    echo noop('Unable to open process needed to run the command.');
+                    echo $this->helpers->localization()->noop('Unable to open process needed to run the command.');
                     flush();
                     ob_flush();
                     return;

@@ -8,6 +8,7 @@ use SimpleSAML\Module\conformance\Helpers\Arr;
 use SimpleSAML\Module\conformance\Helpers\Database;
 use SimpleSAML\Module\conformance\Helpers\Environment;
 use SimpleSAML\Module\conformance\Helpers\Filesystem;
+use SimpleSAML\Module\conformance\Helpers\Localization;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\Helpers\Shell;
 use SimpleSAML\Module\conformance\Helpers\State;
@@ -24,6 +25,7 @@ class Helpers
     protected static ?Shell $shell = null;
     protected static ?Random $random = null;
     protected static ?Environment $environment;
+    protected static ?Localization $localization;
 
     public function arr(): Arr
     {
@@ -62,5 +64,10 @@ class Helpers
     public function environment(): Environment
     {
         return self::$environment ??= new Environment();
+    }
+
+    public function localization(): Localization
+    {
+        return self::$localization ??= new Localization();
     }
 }

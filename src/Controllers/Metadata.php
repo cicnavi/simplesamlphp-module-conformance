@@ -14,6 +14,7 @@ use SimpleSAML\Module\conformance\Errors\AuthorizationException;
 use SimpleSAML\Module\conformance\Factories\GenericStatusFactory;
 use SimpleSAML\Module\conformance\Factories\TemplateFactory;
 use SimpleSAML\Module\conformance\GenericStatus;
+use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\SspBridge;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -22,8 +23,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
-
-use function noop;
 
 class Metadata
 {
@@ -35,6 +34,7 @@ class Metadata
         protected GenericStatusFactory $genericStatusFactory,
         protected TemplateFactory $templateFactory,
         protected Authorization $authorization,
+        protected Helpers $helpers,
     ) {
     }
 
@@ -72,21 +72,27 @@ class Metadata
         $requestStatus = $this->genericStatusFactory->fromRequest($request);
 
         if (empty($xmlData)) {
-            $requestStatus->setStatusError()->setMessage(noop('No XML data provided.'));
+            $requestStatus->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('No XML data provided.')
+            );
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             $this->sspBridge->utils()->xml()->checkSAMLMessage($xmlData, 'saml-meta');
         } catch (Exception $exception) {
-            $requestStatus->setStatusError()->setMessage(noop('Invalid XML. ') . $exception->getMessage());
+            $requestStatus->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('Invalid XML. ') . $exception->getMessage()
+            );
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
         try {
             $entities = $this->sspBridge->metadata()->samlParser()->parseDescriptorsString($xmlData);
         } catch (Throwable $exception) {
-            $requestStatus->setStatusError()->setMessage(noop('Error parsing XML. ') . $exception->getMessage());
+            $requestStatus->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('Error parsing XML. ') . $exception->getMessage()
+            );
             return $this->prepareResponse($request, $requestStatus, 400);
         }
 
@@ -108,10 +114,15 @@ class Metadata
         }
 
         if (empty($spEntities)) {
-            $requestStatus->setStatusOk()->setMessage(noop('XML parsed, but no SP metadata found.'));
+            $requestStatus->setStatusOk()->setMessage(
+                $this->helpers->localization()->noop('XML parsed, but no SP metadata found.')
+            );
         } else {
             $requestStatus->setStatusOk()->setMessage(
-                sprintf(noop('Imported/Updated metadata for %s SPs.'), count($spEntities))
+                sprintf(
+                    $this->helpers->localization()->noop('Imported/Updated metadata for %s SPs.'),
+                    count($spEntities)
+                )
             );
         }
 

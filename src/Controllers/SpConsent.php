@@ -11,13 +11,12 @@ use SimpleSAML\Module\conformance\Database\Repositories\SpConsentRequestReposito
 use SimpleSAML\Module\conformance\Factories\EmailFactory;
 use SimpleSAML\Module\conformance\Factories\GenericStatusFactory;
 use SimpleSAML\Module\conformance\Factories\TemplateFactory;
+use SimpleSAML\Module\conformance\Helpers;
 use SimpleSAML\Module\conformance\Helpers\Routes;
 use SimpleSAML\Module\conformance\ModuleConfiguration;
 use SimpleSAML\Module\conformance\SpConsentHandler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-
-use function noop;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
@@ -35,6 +34,7 @@ class SpConsent
         protected SpConsentHandler $spConsentHandler,
         protected GenericStatusFactory $genericStatusFactory,
         protected EmailFactory $emailFactory,
+        protected Helpers $helpers,
     ) {
     }
 
@@ -81,15 +81,23 @@ class SpConsent
         $status = $this->genericStatusFactory->fromRequest($request);
 
         if (empty($spEntityId) || empty($challenge) || empty($contactEmail)) {
-            $status->setStatusError()->setMessage(noop('Missing required parameters.'));
+            $status->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('Missing required parameters.')
+            );
         } elseif (! $this->spConsentHandler->shouldValidateConsentForSp($spEntityId)) {
-            $status->setStatusError()->setMessage(noop('SP consent not required.'));
+            $status->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('SP consent not required.')
+            );
         } elseif ($this->spConsentHandler->isConsentedForSp($spEntityId)) {
-            $status->setStatusError()->setMessage(noop('SP consent already acquired.'));
+            $status->setStatusError()->setMessage(
+                $this->helpers->localization()->noop('SP consent already acquired.')
+            );
         } else {
             $consentRequest = $this->spConsentHandler->getSpConsentRequest($spEntityId, $contactEmail);
             if (is_null($consentRequest)) {
-                $status->setStatusError()->setMessage(noop('SP consent not requested.'));
+                $status->setStatusError()->setMessage(
+                    $this->helpers->localization()->noop('SP consent not requested.')
+                );
             } elseif (
                 (isset($consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE]) &&
                     (string)$consentRequest[SpConsentRequestRepository::COLUMN_CHALLENGE] === $challenge) &&
@@ -97,9 +105,13 @@ class SpConsent
                     (string)$consentRequest[SpConsentRequestRepository::COLUMN_CONTACT_EMAIL] === $contactEmail)
             ) {
                 $this->spConsentHandler->addConsent($spEntityId, $contactEmail);
-                $status->setStatusOk()->setMessage(noop('SP consent added.'));
+                $status->setStatusOk()->setMessage(
+                    noop('SP consent added.')
+                );
             } else {
-                $status->setStatusError()->setMessage(noop('Could not verify challenge.'));
+                $status->setStatusError()->setMessage(
+                    noop('Could not verify challenge.')
+                );
             }
         }
 
