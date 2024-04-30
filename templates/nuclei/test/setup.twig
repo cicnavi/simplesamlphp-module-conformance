@@ -31,20 +31,6 @@
         </span>
       </div>
 
-      {# TODO mivanci generate from a list of available templates. #}
-      {# TODO mivanci Temporarily hardcoded to raw http since headless version gives false positive #}
-{#      <div class="form-group">#}
-{#        <label for="templateId">Template</label>#}
-{#        <select id="templateId">#}
-{#          <option value="saml-raw-all" selected>SAML tests using raw HTTP (recommended)</option>#}
-{#          <option value="saml-headless-all" >SAML tests using headless browser (experimental)</option>#}
-{#          <option value="">All templates</option>#}
-{#        </select>#}
-{#        <span class="help">#}
-{#          You can choose specific template which will be used by Nuclei to run tests.#}
-{#        </span>#}
-{#      </div>#}
-
       <div class="form-group">
         <label for="enableDebug">
           <input type="checkbox" id="enableDebug" checked>
@@ -55,47 +41,6 @@
           <input type="checkbox" id="enableVerbose" checked>
           Show verbose output?
         </label>
-
-        {# TODO mivanci Temporarily hardcoded. Remove if unecessary. #}
-{#        <label for="enableOutputExport">#}
-{#          <input type="checkbox" id="enableOutputExport">#}
-{#          Export output to a file?#}
-{#          <span class="help">#}
-{#            Choose if you want to export Nuclei output that you can see below to a file.#}
-{#          </span>#}
-{#        </label>#}
-
-{#        <label for="enableFindingsExport">#}
-{#          <input type="checkbox" id="enableFindingsExport" checked>#}
-{#          Export findings to a file?#}
-{#          <span class="help">#}
-{#            Choose if you want to export specific lines corresponding to matched rules (findings) from Nuclei to a file.#}
-{#          </span>#}
-{#        </label>#}
-
-{#        <label for="enableJsonExport">#}
-{#          <input type="checkbox" id="enableJsonExport" checked>#}
-{#          Export results in JSON format?#}
-{#          <span class="help">#}
-{#            Recommended.#}
-{#          </span>#}
-{#        </label>#}
-
-{#        <label for="enableJsonLExport">#}
-{#          <input type="checkbox" id="enableJsonLExport">#}
-{#          Export results in JSONL(ine) format?#}
-{#        </label>#}
-
-{#        <label for="enableSarifExport">#}
-{#          <input type="checkbox" id="enableSarifExport">#}
-{#          Export results in SARIF format?#}
-{#        </label>#}
-
-{#        <label for="enableMarkdownExport">#}
-{#          <input type="checkbox" id="enableMarkdownExport">#}
-{#          Export results in Markdown format?#}
-{#        </label>#}
-
       </div>
 
       <div class="form-group">
@@ -105,7 +50,6 @@
   </div>
 
   <div class="cmd-output">
-    {# TODO mivanci Escape HTML output. #}
     <pre id="cmd-output">{{ output ?? 'Waiting for test initialization.' }}</pre>
   </div>
 

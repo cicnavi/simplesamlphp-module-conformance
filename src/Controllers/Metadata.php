@@ -67,8 +67,7 @@ class Metadata
 
         $xmlData = $this->getXmlData($request);
 
-        // TODO mivanci move to GenericStatusFactory
-        $requestStatus = new GenericStatus();
+        $requestStatus = $this->genericStatusFactory->fromRequest($request);
 
         if (empty($xmlData)) {
             $requestStatus->setStatusError()->setMessage('No XML data provided.');

@@ -14,7 +14,7 @@ class GenericStatusFactory
         /** @var mixed $status */
         $status = $request->server->get(GenericStatus::KEY_STATUS) ??
             $request->query->get(GenericStatus::KEY_STATUS);
-        $status = empty($status) ? null : (string) $status;
+        $status = empty($status) ? null : (string)$status;
 
         /** @var mixed $message */
         $message = $request->server->get(GenericStatus::KEY_MESSAGE) ??
